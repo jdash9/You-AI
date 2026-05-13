@@ -96,10 +96,10 @@
       const correct = ['Stress', 'reduzieren'];
       const fb = document.getElementById('keyword-feedback');
       if (correct.includes(word)) {
-        fb.innerHTML = '✅ Richtig! "' + word + '" ist ein wichtiges Keyword.';
+        fb.innerHTML = 'Richtig! "' + word + '" ist ein wichtiges Keyword.';
         fb.className = 'box correct';
       } else {
-        fb.innerHTML = '❌ "' + word + '" ist eher ein Füllwort – kein Keyword.';
+        fb.innerHTML =  word + '" ist eher ein Füllwort – kein Keyword.';
         fb.className = 'box wrong';
       }
     }
@@ -107,10 +107,10 @@
     function selectStrategy(s) {
       const fb = document.getElementById('strategy-feedback');
       if (s === 'genau') {
-        fb.innerHTML = '🎯 Gute Wahl – genauere Analyse liefert bessere Antworten.';
+        fb.innerHTML = 'Gute Wahl – genauere Analyse liefert bessere Antworten.';
         fb.className = 'box correct';
       } else {
-        fb.innerHTML = '⚡ Schnell kann oberflächlich werden – aber manchmal reicht es.';
+        fb.innerHTML = 'Schnell kann oberflächlich werden – aber manchmal reicht es.';
         fb.className = 'box wrong';
       }
     }
@@ -119,11 +119,11 @@
       const fb = document.getElementById('info-feedback');
       if (correct) {
         el.className = 'box correct';
-        fb.innerHTML = '✅ Richtig! Das ist eine verlässliche Information.';
+        fb.innerHTML = 'Richtig! Das ist eine verlässliche Information.';
         fb.className = 'box correct';
       } else {
         el.className = 'box wrong';
-        fb.innerHTML = '❌ Falsch! Das ist eine typische KI-Fehlinformation.';
+        fb.innerHTML = 'Falsch! Das ist eine typische KI-Fehlinformation.';
         fb.className = 'box wrong';
       }
     }
