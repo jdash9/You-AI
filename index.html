@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YOU-AI – Werde die KI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --accent: #c0392b;
+    --accent2: #e67e22;
+    --text: #e8e8e0;
+    --muted: #6b6b7a;
+    --node-active: #c0392b;
+    --node-inactive: #2a2a35;
+    --node-highlight: #e67e22;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(13,13,15,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .step-indicator {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--node-inactive);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .step-dot.active { background: var(--accent); transform: scale(1.4); }
+  .step-dot.done { background: var(--accent2); }
+
+  .timer-box {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .timer-box .time { color: var(--text); font-weight: 700; }
+
+  /* SCREENS */
+  .screen {
+    display: none;
+    min-height: calc(100vh - 65px);
+    padding: 3rem 2.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease;
+  }
+  .screen.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* TYPOGRAPHY */
+  h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.8rem; }
+  p { line-height: 1.7; color: rgba(232,232,224,0.8); }
+
+  .accent-text { color: var(--accent); }
+  .accent2-text { color: var(--accent2); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.8rem;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #a93226; transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: #25252e; }
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+  .card:hover { border-color: rgba(255,255,255,0.12); }
+
+  /* ─── SCREEN 0: INTRO ─── */
+  #screen-intro {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem;
+    padding-top: 5rem;
+  }
+  #screen-intro.active { display: flex; }
+
+  .intro-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .intro-feature {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+  }
+  .intro-feature .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .intro-feature p { font-size: 0.88rem; margin-top: 0.3rem; }
+
+  /* ─── SCREEN 1: PROMPT ─── */
+  .prompt-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 1.8rem;
+    margin-bottom: 2rem;
+  }
+  .prompt-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.6rem;
+  }
+  .prompt-text {
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .keyword-area { margin: 2rem 0; }
+  .keyword-slots {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .keyword-slot {
+    padding: 0.5rem 1.2rem;
+    border: 1.5px dashed var(--muted);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--muted);
+    min-width: 100px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .keyword-slot.filled {
+    border-style: solid;
+    border-color: var(--accent2);
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .word-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+  .word-chip {
+    padding: 0.45rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .word-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .word-chip.selected { background: rgba(230,126,34,0.15); border-color: var(--accent2); color: var(--accent2); }
+  .word-chip.wrong { border-color: var(--accent); color: var(--accent); background: rgba(192,57,43,0.1); animation: shake 0.3s; }
+  .word-chip.disabled { opacity: 0.3; pointer-events: none; }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* ─── SCREEN 2: STRATEGY ─── */
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .strategy-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+  .strategy-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .strategy-card.selected { border-color: var(--accent); background: rgba(192,57,43,0.08); }
+  .strategy-card .s-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+  .strategy-card h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+  .strategy-card p { font-size: 0.85rem; }
+  .strategy-card .s-badge {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    background: var(--accent2);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  /* ─── SCREEN 3: NEURAL NETWORK ─── */
+  #network-canvas-wrap {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto 2rem;
+  }
+  #network-svg { width: 100%; height: auto; }
+
+  .node { cursor: pointer; }
+  .node circle { transition: fill 0.3s, r 0.3s; }
+  .node:hover circle { r: 20; }
+  .node text { font-size: 10px; fill: var(--text); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+  .network-legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  /* ─── SCREEN 4: INFO SELECTION ─── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+  .info-card:hover { border-color: rgba(255,255,255,0.18); }
+  .info-card.selected-good { border-color: #27ae60; background: rgba(39,174,96,0.08); }
+  .info-card.selected-bad { border-color: var(--accent); background: rgba(192,57,43,0.08); }
+  .info-card .source {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .info-card p { font-size: 0.88rem; line-height: 1.5; }
+  .info-card .check { position: absolute; top: 0.8rem; right: 0.8rem; font-size: 1.1rem; }
+
+  /* ─── SCREEN 5: ANSWER BUILDER ─── */
+  .answer-textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    padding: 1.2rem;
+    resize: vertical;
+    min-height: 160px;
+    margin: 1rem 0;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+  .answer-textarea:focus { outline: none; border-color: var(--accent2); }
+
+  .building-blocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1rem 0;
+  }
+  .block-chip {
+    padding: 0.4rem 0.9rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .block-chip:hover { background: var(--surface); border-color: var(--accent2); }
+
+  /* ─── SCREEN 6: FEEDBACK ─── */
+  .feedback-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .feedback-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+  .feedback-panel.yours { border-top: 3px solid var(--accent2); }
+  .feedback-panel.ai { border-top: 3px solid var(--accent); }
+  .feedback-panel p { font-size: 0.9rem; line-height: 1.6; }
+
+  .score-bar-wrap { margin: 0.8rem 0; }
+  .score-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.4rem;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    width: 0%;
+    transition: width 1s ease;
+  }
+
+  .decision-list { margin-top: 1rem; }
+  .decision-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-icon { font-size: 1.1rem; width: 1.4rem; text-align: center; }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    position: fixed;
+    top: 65px;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+    z-index: 99;
+  }
+
+  /* MISC */
+  .divider { height: 1px; background: var(--border); margin: 2rem 0; }
+  .hint-box {
+    background: rgba(230,126,34,0.08);
+    border: 1px solid rgba(230,126,34,0.2);
+    border-radius: 6px;
+    padding: 0.9rem 1.2rem;
+    font-size: 0.85rem;
+    color: rgba(230,126,34,0.9);
+    margin: 1rem 0;
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 2rem;
+    align-items: center;
+  }
+
+  @media (max-width: 680px) {
+    header { padding: 1rem 1.2rem; }
+    .screen { padding: 2rem 1.2rem; }
+    .intro-grid, .strategy-grid, .info-grid, .feedback-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">YOU<span>-AI</span></div>
+  <div class="step-indicator" id="stepIndicator">
+    <div class="step-dot" data-step="0"></div>
+    <div class="step-dot" data-step="1"></div>
+    <div class="step-dot" data-step="2"></div>
+    <div class="step-dot" data-step="3"></div>
+    <div class="step-dot" data-step="4"></div>
+    <div class="step-dot" data-step="5"></div>
+    <div class="step-dot" data-step="6"></div>
+  </div>
+  <div class="timer-box">
+    <span>⏱</span><span class="time" id="timerDisplay">0:00</span>
+  </div>
+</header>
+
+<!-- ─── SCREEN 0: INTRO ─── -->
+<div class="screen active" id="screen-0">
+  <div class="intro-eyebrow">Hochschule Bremen · Medieninformatik · SoSe 2026</div>
+  <h1>Werde die <span class="accent-text">KI.</span></h1>
+  <p style="font-size:1.1rem; max-width:600px;">
+    Du glaubst, du weißt wie KI funktioniert? Beweise es. In dieser Simulation übernimmst du
+    alle Entscheidungen – von der Analyse bis zur Antwort.
+  </p>
+  <div class="intro-grid">
+    <div class="intro-feature">
+      <div class="icon">🔍</div>
+      <h3 style="margin:0.3rem 0;">Prompt analysieren</h3>
+      <p>Erkenne Keywords und Kontext – wie ein echter Tokenizer.</p>
+    </div>
+    <div class="intro-feature">
+      <div class="icon">🧠</div>
+      <h3 style="margin:0.3rem 0;">Netzwerk aktivieren</h3>
+      <p>Aktiviere relevante Knoten im simulierten Neuronalen Netz.</p>
+    </div>
+    <div class="intro-feature">
+      <div class="icon">⚠️</div>
+      <h3 style="margin:0.3rem 0;">Fehler erleben</h3>
+      <p>Falsche Quellen und schlechte Entscheidungen → schlechte Antworten.</p>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="goTo(1)">Simulation starten →</button>
+  </div>
+</div>
+
+<!-- ─── SCREEN 1: PROMPT & KEYWORDS ─── -->
+<div class="screen" id="screen-1">
+  <div class="intro-eyebrow">Schritt 1 von 6</div>
+  <h1>Analysiere den <span class="accent-text">Prompt.</span></h1>
+  <p>Lies die Frage und identifiziere die wichtigsten Keywords – genau wie ein Sprachmodell beim Tokenisieren.</p>
+
+  <div class="divider"></div>
+
+  <div class="prompt-box">
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-text" id="currentPrompt">Was ist der beste Weg, um Stress im Alltag zu reduzieren?</div>
+  </div>
+
+  <div class="keyword-area">
+    <h3>Wähle die 3 wichtigsten Keywords</h3>
+    <div class="keyword-slots" id="keywordSlots">
+      <div class="keyword-slot" id="slot-0">___</div>
+      <div class="keyword-slot" id="slot-1">___</div>
+      <div class="keyword-slot" id="slot-2">___</div>
+    </div>
+  </div>
+
+  <div class="hint-box">💡 Tipp: Keywords sind inhaltlich wichtige Wörter, keine Füllwörter wie "der", "ist", "um".</div>
+
+  <h3>Wortpool – was ist relevant?</h3>
+  <div class="word-pool" id="wordPool"></div>
+
+  <div id="keyword-feedback" style="display:none;" class="hint-box" style="margin-top:1rem;"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(0)">← Zurück</button>
+    <button class="btn btn-primary" id="btnStep1" onclick="checkKeywords()" disabled>Weiter →</button>
+  </div>
+</div>
+
+<!-- ─── SCREEN 2: STRATEGY ─── -->
+<div class="screen" id="screen-2">
+  <div class="intro-eyebrow">Schritt 2 von 6</div>
+  <h1>Wähle deine <span class="accent-text">Strategie.</span></h1>
+  <p>Wie geht eine KI vor? Wähle eine Strategie – sie beeinflusst die Qualität deiner Antwort.</p>
+  <div class="divider"></div>
+
+  <div class="strategy-grid">
+    <div class="strategy-card" onclick="selectStrategy(this, 'knowledge')" id="s-knowledge">
+      <div class="s-icon">🧠</div>
+      <h2>Eigenes Wissen</h2>
+      <p>Nutze nur Trainingsdaten. Schnell, aber möglicherweise veraltet.</p>
+    </div>
+    <div class="strategy-card" onclick="selectStrategy(this, 'search')" id="s-search">
+      <div class="s-icon">🌐</div>
+      <h2>Online-Suche</h2>
+      <p>Lade externe Quellen. Mehr Infos, aber auch mehr Fehlerquellen.</p>
+      <div class="s-badge">+INFO</div>
+    </div>
+    <div class="strategy-card" onclick="selectStrategy(this, 'fast')" id="s-fast">
+      <div class="s-icon">⚡</div>
+      <h2>Schnell</h2>
+      <p>Priorisiere Geschwindigkeit. Weniger Genauigkeit, dafür sofortige Antwort.</p>
+    </div>
+    <div class="strategy-card" onclick="selectStrategy(this, 'accurate')" id="s-accurate">
+      <div class="s-icon">🎯</div>
+      <h2>Genau</h2>
+      <p>Tiefe Analyse aller Daten. Langsamer, aber qualitativ hochwertiger.</p>
+    </div>
+  </div>
+
+  <div id="strategy-hint" class="hint-box" style="display:none;"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(1)">← Zurück</button>
+    <button class="btn btn-primary" id="btnStep2" onclick="goTo(3)" disabled>Weiter →</button>
+  </div>
+</div>
+
+<!-- ─── SCREEN 3: NEURAL NETWORK ─── -->
+<div class="screen" id="screen-3">
+  <div class="intro-eyebrow">Schritt 3 von 6</div>
+  <h1>Aktiviere das <span class="accent-text">Netzwerk.</span></h1>
+  <p>Klicke auf relevante Knoten, um sie zu aktivieren. Verwandte Knoten leuchten auf – so funktioniert Attention.</p>
+  <div class="divider"></div>
+
+  <div class="network-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#2a2a35; border:1.5px solid #555;"></div> Inaktiv</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> Aktiv (du)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent2);"></div> Verbunden</div>
+  </div>
+
+  <div id="network-canvas-wrap">
+    <svg id="network-svg" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="rgba(255,255,255,0.12)"/>
+        </marker>
+      </defs>
+      <g id="edges"></g>
+      <g id="nodes-group"></g>
+    </svg>
+  </div>
+
+  <div id="network-msg" class="hint-box">Klicke auf mindestens 3 Knoten, um fortzufahren.</div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(2)">← Zurück</button>
+    <button class="btn btn-primary" id="btnStep3" onclick="goTo(4)" disabled>Weiter →</button>
+  </div>
+</div>
+
+<!-- ─── SCREEN 4: INFO SELECTION ─── -->
+<div class="screen" id="screen-4">
+  <div class="intro-eyebrow">Schritt 4 von 6</div>
+  <h1>Filtere die <span class="accent-text">Infos.</span></h1>
+  <p>Nicht alle Quellen sind zuverlässig. Wähle die Informationen, die du in deine Antwort aufnehmen möchtest.</p>
+  <div class="divider"></div>
+  <div class="hint-box">⚠️ Achtung: Manche Quellen sind falsch oder irreführend. Wähle sorgfältig!</div>
+  <div class="info-grid" id="infoGrid"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(3)">← Zurück</button>
+    <button class="btn btn-primary" id="btnStep4" onclick="goTo(5)" disabled>Weiter →</button>
+  </div>
+</div>
+
+<!-- ─── SCREEN 5: ANSWER ─── -->
+<div class="screen" id="screen-5">
+  <div class="intro-eyebrow">Schritt 5 von 6</div>
+  <h1>Generiere die <span class="accent-text">Antwort.</span></h1>
+  <p>Nutze die Bausteine oder schreibe selbst. Du bist jetzt das Sprachmodell.</p>
+  <div class="divider"></div>
+
+  <h3>Bausteine (klicken zum Einfügen)</h3>
+  <div class="building-blocks" id="buildingBlocks"></div>
+
+  <h3 style="margin-top:1.5rem;">Deine Antwort</h3>
+  <textarea class="answer-textarea" id="userAnswer" placeholder="Schreibe hier deine Antwort..."></textarea>
+
+  <div id="answer-warn" class="hint-box" style="display:none;">✏️ Bitte schreibe mindestens 20 Zeichen.</div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(4)">← Zurück</button>
+    <button class="btn btn-primary" onclick="submitAnswer()">Auswerten →</button>
+  </div>
+</div>
+
+<!-- ─── SCREEN 6: FEEDBACK ─── -->
+<div class="screen" id="screen-6">
+  <div class="intro-eyebrow">Ergebnis</div>
+  <h1>Dein <span class="accent-text">Feedback.</span></h1>
+  <p>Vergleiche deine Entscheidungen mit einer KI-generierten Referenzantwort.</p>
+  <div class="divider"></div>
+
+  <div class="feedback-grid">
+    <div class="feedback-panel yours">
+      <h3>Deine Antwort</h3>
+      <p id="yourAnswerDisplay"></p>
+    </div>
+    <div class="feedback-panel ai">
+      <h3>Referenzantwort (KI)</h3>
+      <p id="aiAnswerDisplay"></p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h3>Deine Entscheidungen</h3>
+    <div class="decision-list" id="decisionList"></div>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h3>Gesamtbewertung</h3>
+    <div class="score-bar-wrap">
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+        <span>Qualitätsscore</span>
+        <span id="scoreText" style="font-weight:700; color:var(--accent2);">–</span>
+      </div>
+      <div class="score-bar"><div class="score-bar-fill" id="scoreBarFill"></div></div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="restart()">🔄 Neu starten</button>
+    <button class="btn btn-outline" onclick="goTo(5)">← Antwort ändern</button>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───
+const state = {
+  currentScreen: 0,
+  strategy: null,
+  selectedKeywords: [],
+  activatedNodes: new Set(),
+  selectedInfos: [],
+  userAnswer: '',
+  timerStart: null,
+  timerInterval: null,
+  elapsed: 0,
+  score: 0,
+};
+
+// ─── SCENARIO DATA ───
+const scenario = {
+  prompt: "Was ist der beste Weg, um Stress im Alltag zu reduzieren?",
+  correctKeywords: ["Stress", "reduzieren", "Alltag"],
+  allWords: ["Was", "ist", "der", "beste", "Weg", "um", "Stress", "im", "Alltag", "zu", "reduzieren"],
+  networkNodes: [
+    { id: 0, label: "Stress", x: 120, y: 90, relevant: true },
+    { id: 1, label: "Alltag", x: 280, y: 50, relevant: true },
+    { id: 2, label: "Entspannung", x: 440, y: 90, relevant: true },
+    { id: 3, label: "Sport", x: 580, y: 150, relevant: true },
+    { id: 4, label: "Schlaf", x: 120, y: 200, relevant: true },
+    { id: 5, label: "Ernährung", x: 280, y: 170, relevant: false },
+    { id: 6, label: "Meditation", x: 440, y: 220, relevant: true },
+    { id: 7, label: "Atmen", x: 580, y: 290, relevant: true },
+    { id: 8, label: "Reisen", x: 120, y: 320, relevant: false },
+    { id: 9, label: "Routine", x: 280, y: 300, relevant: true },
+    { id: 10, label: "Wetter", x: 440, y: 330, relevant: false },
+    { id: 11, label: "Natur", x: 600, y: 380, relevant: true },
+  ],
+  edges: [
+    [0,2],[0,4],[0,6],[1,0],[1,9],[2,6],[2,7],[3,4],[3,6],[4,9],[5,0],[6,7],[8,11],[9,6],[10,11]
+  ],
+  infoCards: [
+    { id:0, source:"Gesundheitsportal.de", text:"Regelmäßige Bewegung und Sport senken nachweislich den Cortisolspiegel und reduzieren Stress.", correct: true },
+    { id:1, source:"WohlfühlBlog24.net", text:"Mindestens 3 Tassen Kaffee am Tag helfen gegen Stress, da Koffein entspannend wirkt.", correct: false },
+    { id:2, source:"Psychologie Heute", text:"Atemübungen und Meditation aktivieren das parasympathische Nervensystem und reduzieren Stressreaktionen.", correct: true },
+    { id:3, source:"ViralHealth.com", text:"Stressabbau funktioniert am besten durch 10+ Stunden Schlaf täglich – alles andere ist wirkungslos.", correct: false },
+    { id:4, source:"BKK Bundesverband", text:"Soziale Kontakte und regelmäßige Pausen im Alltag stärken die mentale Resilienz.", correct: true },
+    { id:5, source:"Anonymes Forum", text:"Der einzige echte Weg gegen Stress ist völliger Rückzug aus dem sozialen Leben.", correct: false },
+  ],
+  buildingBlocks: [
+    "Regelmäßige Bewegung hilft,", "Atemübungen und Meditation sind effektiv,", 
+    "ausreichend Schlaf ist wichtig,", "soziale Kontakte stärken die Resilienz,",
+    "Pausen im Alltag einplanen,", "Kaffee reduziert Stress (falsch!)",
+  ],
+  aiAnswer: "Stress im Alltag lässt sich durch eine Kombination aus regelmäßiger Bewegung, Entspannungstechniken wie Meditation oder Atemübungen und ausreichend Schlaf reduzieren. Soziale Kontakte und gezielte Pausen im Tagesablauf stärken die mentale Widerstandsfähigkeit. Wichtig ist eine individuelle, nachhaltige Routine.",
+};
+
+// ─── NAVIGATION ───
+function goTo(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${n}`).classList.add('active');
+  state.currentScreen = n;
+  updateIndicator();
+  updateProgress();
+  window.scrollTo(0, 0);
+
+  if (n === 1) initKeywords();
+  if (n === 3) initNetwork();
+  if (n === 4) initInfoCards();
+  if (n === 5) initBlocks();
+  if (n === 6) showFeedback();
+
+  if (n === 1 && !state.timerStart) startTimer();
+}
+
+// ─── PROGRESS & INDICATOR ───
+function updateIndicator() {
+  document.querySelectorAll('.step-dot').forEach(d => {
+    const s = parseInt(d.dataset.step);
+    d.classList.remove('active','done');
+    if (s === state.currentScreen) d.classList.add('active');
+    else if (s < state.currentScreen) d.classList.add('done');
+  });
+}
+
+function updateProgress() {
+  const pct = (state.currentScreen / 6) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// ─── TIMER ───
+function startTimer() {
+  state.timerStart = Date.now();
+  state.timerInterval = setInterval(() => {
+    state.elapsed = Math.floor((Date.now() - state.timerStart) / 1000);
+    const m = Math.floor(state.elapsed / 60);
+    const s = state.elapsed % 60;
+    document.getElementById('timerDisplay').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ─── SCREEN 1: KEYWORDS ───
+function initKeywords() {
+  state.selectedKeywords = [];
+  document.querySelectorAll('.keyword-slot').forEach(s => { s.textContent = '___'; s.classList.remove('filled'); });
+  document.getElementById('keyword-feedback').style.display = 'none';
+  document.getElementById('btnStep1').disabled = true;
+
+  const pool = document.getElementById('wordPool');
+  pool.innerHTML = '';
+  scenario.allWords.forEach(w => {
+    const chip = document.createElement('div');
+    chip.className = 'word-chip';
+    chip.textContent = w;
+    chip.onclick = () => selectWord(chip, w);
+    pool.appendChild(chip);
+  });
+}
+
+function selectWord(chip, word) {
+  if (chip.classList.contains('disabled')) return;
+  if (state.selectedKeywords.includes(word)) {
+    state.selectedKeywords = state.selectedKeywords.filter(k => k !== word);
+    chip.classList.remove('selected','wrong');
+    updateSlots();
+    document.getElementById('btnStep1').disabled = state.selectedKeywords.length < 3;
+    return;
+  }
+  if (state.selectedKeywords.length >= 3) return;
+
+  const isCorrect = scenario.correctKeywords.includes(word);
+  state.selectedKeywords.push(word);
+  chip.classList.add(isCorrect ? 'selected' : 'wrong');
+  updateSlots();
+
+  if (state.selectedKeywords.length === 3) {
+    document.getElementById('btnStep1').disabled = false;
+    const correct = state.selectedKeywords.filter(k => scenario.correctKeywords.includes(k)).length;
+    const fb = document.getElementById('keyword-feedback');
+    fb.style.display = 'flex';
+    fb.style.background = correct === 3 ? 'rgba(39,174,96,0.08)' : 'rgba(192,57,43,0.08)';
+    fb.style.borderColor = correct === 3 ? 'rgba(39,174,96,0.3)' : 'rgba(192,57,43,0.3)';
+    fb.style.color = correct === 3 ? '#2ecc71' : '#e74c3c';
+    fb.textContent = correct === 3
+      ? '✅ Perfekt! Du hast alle relevanten Keywords erkannt.'
+      : `⚠️ ${correct} von 3 Keywords korrekt. Füllwörter liefern keine Bedeutung für das Modell.`;
+    state.keywordScore = correct;
+  }
+}
+
+function updateSlots() {
+  for (let i = 0; i < 3; i++) {
+    const slot = document.getElementById(`slot-${i}`);
+    if (state.selectedKeywords[i]) {
+      slot.textContent = state.selectedKeywords[i];
+      slot.classList.add('filled');
+    } else {
+      slot.textContent = '___';
+      slot.classList.remove('filled');
+    }
+  }
+}
+
+function checkKeywords() { goTo(2); }
+
+// ─── SCREEN 2: STRATEGY ───
+function selectStrategy(el, key) {
+  document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.strategy = key;
+  document.getElementById('btnStep2').disabled = false;
+
+  const hints = {
+    knowledge: '🧠 Eigenes Wissen: Schnell und konsistent, aber du könntest veraltete Infos nutzen.',
+    search: '🌐 Online-Suche: Mehr Daten, aber auch mehr Risiko für falsche Quellen – wähle sorgfältig!',
+    fast: '⚡ Schnell-Modus: Du überspringst Details. Die Antwort kann oberflächlich werden.',
+    accurate: '🎯 Genau-Modus: Du analysierst tiefer. Höhere Qualität, aber du brauchst mehr Zeit.',
+  };
+
+  const h = document.getElementById('strategy-hint');
+  h.style.display = 'flex';
+  h.textContent = hints[key];
+}
+
+// ─── SCREEN 3: NETWORK ───
+function initNetwork() {
+  const svg = document.getElementById('network-svg');
+  const edgesG = document.getElementById('edges');
+  const nodesG = document.getElementById('nodes-group');
+  edgesG.innerHTML = '';
+  nodesG.innerHTML = '';
+  state.activatedNodes.clear();
+  document.getElementById('btnStep3').disabled = true;
+
+  // Draw edges
+  scenario.edges.forEach(([a, b]) => {
+    const na = scenario.networkNodes[a];
+    const nb = scenario.networkNodes[b];
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
+    line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
+    line.setAttribute('stroke','rgba(255,255,255,0.08)');
+    line.setAttribute('stroke-width','1.5');
+    line.id = `edge-${a}-${b}`;
+    edgesG.appendChild(line);
+  });
+
+  // Draw nodes
+  scenario.networkNodes.forEach(n => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','node');
+    g.id = `node-${n.id}`;
+    g.setAttribute('transform', `translate(${n.x},${n.y})`);
+    g.onclick = () => toggleNode(n.id);
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('r','16');
+    circle.setAttribute('fill', n.relevant ? '#22222e' : '#1a1a20');
+    circle.setAttribute('stroke', n.relevant ? '#3a3a50' : '#2a2a2a');
+    circle.setAttribute('stroke-width','1.5');
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.textContent = n.label;
+    text.setAttribute('y', '28');
+    text.setAttribute('font-size','9');
+    text.setAttribute('fill','rgba(232,232,224,0.6)');
+    text.setAttribute('text-anchor','middle');
+
+    g.appendChild(circle);
+    g.appendChild(text);
+    nodesG.appendChild(g);
+  });
+}
+
+function toggleNode(id) {
+  const node = scenario.networkNodes[id];
+  if (state.activatedNodes.has(id)) {
+    state.activatedNodes.delete(id);
+  } else {
+    state.activatedNodes.add(id);
+  }
+  updateNetworkVisual();
+}
+
+function updateNetworkVisual() {
+  scenario.networkNodes.forEach(n => {
+    const g = document.getElementById(`node-${n.id}`);
+    const circle = g.querySelector('circle');
+    const isActive = state.activatedNodes.has(n.id);
+    // Check if connected to active node
+    const isConnected = !isActive && scenario.edges.some(([a,b]) =>
+      (a === n.id && state.activatedNodes.has(b)) ||
+      (b === n.id && state.activatedNodes.has(a))
+    );
+
+    circle.setAttribute('fill',
+      isActive ? 'var(--node-active)' :
+      isConnected ? '#2a1a0a' : '#22222e'
+    );
+    circle.setAttribute('stroke',
+      isActive ? '#e74c3c' :
+      isConnected ? 'var(--accent2)' : '#3a3a50'
+    );
+    circle.setAttribute('stroke-width', isActive ? '2.5' : isConnected ? '2' : '1.5');
+  });
+
+  // Update edge colors
+  scenario.edges.forEach(([a, b]) => {
+    const line = document.getElementById(`edge-${a}-${b}`);
+    if (!line) return;
+    const bothActive = state.activatedNodes.has(a) && state.activatedNodes.has(b);
+    const oneActive = state.activatedNodes.has(a) || state.activatedNodes.has(b);
+    line.setAttribute('stroke',
+      bothActive ? 'rgba(192,57,43,0.5)' :
+      oneActive ? 'rgba(230,126,34,0.25)' : 'rgba(255,255,255,0.08)'
+    );
+    line.setAttribute('stroke-width', bothActive ? '2.5' : oneActive ? '1.8' : '1.5');
+  });
+
+  const count = state.activatedNodes.size;
+  const msg = document.getElementById('network-msg');
+  if (count >= 3) {
+    document.getElementById('btnStep3').disabled = false;
+    const relevant = [...state.activatedNodes].filter(id => scenario.networkNodes[id].relevant).length;
+    msg.textContent = `✅ ${count} Knoten aktiviert, ${relevant} davon relevant. Du kannst weitermachen.`;
+    msg.style.borderColor = 'rgba(39,174,96,0.3)';
+    msg.style.color = '#2ecc71';
+    state.networkScore = relevant;
+  } else {
+    document.getElementById('btnStep3').disabled = true;
+    msg.textContent = `Klicke auf mindestens 3 Knoten, um fortzufahren. (${count}/3)`;
+    msg.style.borderColor = 'rgba(230,126,34,0.2)';
+    msg.style.color = 'rgba(230,126,34,0.9)';
+  }
+}
+
+// ─── SCREEN 4: INFO CARDS ───
+function initInfoCards() {
+  state.selectedInfos = [];
+  document.getElementById('btnStep4').disabled = true;
+  const grid = document.getElementById('infoGrid');
+  grid.innerHTML = '';
+  scenario.infoCards.forEach(info => {
+    const card = document.createElement('div');
+    card.className = 'info-card';
+    card.id = `info-${info.id}`;
+    card.innerHTML = `<div class="source">📎 ${info.source}</div><p>${info.text}</p><div class="check"></div>`;
+    card.onclick = () => toggleInfo(info.id, info.correct, card);
+    grid.appendChild(card);
+  });
+}
+
+function toggleInfo(id, correct, card) {
+  if (state.selectedInfos.includes(id)) {
+    state.selectedInfos = state.selectedInfos.filter(i => i !== id);
+    card.classList.remove('selected-good','selected-bad');
+    card.querySelector('.check').textContent = '';
+  } else {
+    state.selectedInfos.push(id);
+    card.classList.add(correct ? 'selected-good' : 'selected-bad');
+    card.querySelector('.check').textContent = correct ? '✅' : '❌';
+  }
+  document.getElementById('btnStep4').disabled = state.selectedInfos.length === 0;
+  state.infoScore = state.selectedInfos.filter(id => scenario.infoCards.find(c => c.id === id).correct).length;
+  state.infoBad = state.selectedInfos.filter(id => !scenario.infoCards.find(c => c.id === id).correct).length;
+}
+
+// ─── SCREEN 5: BLOCKS ───
+function initBlocks() {
+  document.getElementById('userAnswer').value = '';
+  const bb = document.getElementById('buildingBlocks');
+  bb.innerHTML = '';
+  scenario.buildingBlocks.forEach(b => {
+    const chip = document.createElement('div');
+    chip.className = 'block-chip';
+    chip.textContent = b;
+    chip.onclick = () => {
+      const ta = document.getElementById('userAnswer');
+      ta.value += (ta.value ? ' ' : '') + b;
+    };
+    bb.appendChild(chip);
+  });
+}
+
+function submitAnswer() {
+  const answer = document.getElementById('userAnswer').value.trim();
+  if (answer.length < 20) {
+    document.getElementById('answer-warn').style.display = 'flex';
+    return;
+  }
+  state.userAnswer = answer;
+  document.getElementById('answer-warn').style.display = 'none';
+  goTo(6);
+}
+
+// ─── SCREEN 6: FEEDBACK ───
+function showFeedback() {
+  clearInterval(state.timerInterval);
+  document.getElementById('yourAnswerDisplay').textContent = state.userAnswer;
+  document.getElementById('aiAnswerDisplay').textContent = scenario.aiAnswer;
+
+  const kScore = (state.keywordScore || 0);
+  const nScore = Math.min(state.networkScore || 0, 3);
+  const iGood = state.infoScore || 0;
+  const iBad = state.infoBad || 0;
+  const stratBonus = state.strategy === 'accurate' ? 1 : state.strategy === 'knowledge' ? 0.5 : 0;
+  const raw = kScore + nScore + iGood - iBad + stratBonus;
+  const total = Math.min(100, Math.max(0, Math.round((raw / 8.5) * 100)));
+  state.score = total;
+
+  setTimeout(() => {
+    document.getElementById('scoreBarFill').style.width = total + '%';
+    document.getElementById('scoreText').textContent = total + ' / 100';
+  }, 200);
+
+  const stratLabels = { knowledge:'Eigenes Wissen', search:'Online-Suche', fast:'Schnell', accurate:'Genau', null:'–' };
+  const decisions = [
+    { icon: kScore===3?'✅':'⚠️', text:`Keywords: ${kScore}/3 korrekt (${state.selectedKeywords.join(', ')})` },
+    { icon: ['knowledge','accurate'].includes(state.strategy)?'✅':'⚡', text:`Strategie: ${stratLabels[state.strategy]}` },
+    { icon: nScore>=3?'✅':'⚠️', text:`Netzwerk: ${state.networkScore} relevante Knoten aktiviert` },
+    { icon: iGood>=2&&iBad===0?'✅':iBad>0?'❌':'⚠️', text:`Infos: ${iGood} korrekte, ${iBad} falsche Quellen ausgewählt` },
+  ];
+
+  const list = document.getElementById('decisionList');
+  list.innerHTML = '';
+  decisions.forEach(d => {
+    list.innerHTML += `<div class="decision-item"><span class="decision-icon">${d.icon}</span><span>${d.text}</span></div>`;
+  });
+}
+
+function restart() {
+  state.strategy = null;
+  state.selectedKeywords = [];
+  state.activatedNodes = new Set();
+  state.selectedInfos = [];
+  state.userAnswer = '';
+  state.timerStart = null;
+  clearInterval(state.timerInterval);
+  state.elapsed = 0;
+  document.getElementById('timerDisplay').textContent = '0:00';
+  document.getElementById('scoreBarFill').style.width = '0%';
+  goTo(0);
+}
+
+// Init
+updateIndicator();
+</script>
+</body>
+</html>
