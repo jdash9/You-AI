@@ -16,134 +16,44 @@ It contains:
 The page loads all components of the system and initializes the game.
 ========================================================
 -->
+
 <head>
   <meta charset="UTF-8">
   <title>YOU-AI</title>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
-    .hidden { display: none; }
-    .box { border: 1px solid #ccc; padding: 15px; margin: 15px 0; border-radius: 6px; }
-    .correct { background: #d4edda; }
-    .wrong { background: #f8d7da; }
-    textarea { width: 100%; height: 120px; padding: 10px; font-size: 1rem; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/feedback.css">
 </head>
+
 <body>
-
-  <!-- STEP 1 -->
-  <div id="step1">
-    <h2>Step 1: Read the Prompt</h2>
-    <div class="box">
-      <strong>Prompt:</strong> What is the best way to reduce stress in everyday life?
+  <!-- Home Screen -->
+  <div id="homeScreen" class="screen active">
+    <div class="home-container">
+      <h1 class="home-title">You-AI</h1>
+      <p class="home-subtitle">AI is not magic.<br> 
+        You-AI, Do-AI.</p>
+      <div class="scroll-indicator">↓</div>
     </div>
-    <p>Which 2 words are the most important keywords?</p>
-    <button onclick="checkKeyword('stress')">stress</button>
-    <button onclick="checkKeyword('what')">what</button>
-    <button onclick="checkKeyword('reduce')">reduce</button>
-    <button onclick="checkKeyword('the')">the</button>
-    <div id="keyword-feedback"></div>
-    <br>
-    <button onclick="goStep(2)">Next →</button>
+    <div class="role-box">
+      <p>Here you will take the role of the AI</p>
+    </div>
+    <button class="home-start-button">Get Started</button>
   </div>
 
-  <!-- STEP 2 -->
-  <div id="step2" class="hidden">
-    <h2>Step 2: Choose a Strategy</h2>
-    <p>How should the AI respond?</p>
-    <button onclick="selectStrategy('fast')">Fast</button>
-    <button onclick="selectStrategy('accurate')">Accurate</button>
-    <div id="strategy-feedback"></div>
-    <br>
-    <button onclick="goStep(3)">Next →</button>
+  <!-- Main Game Container -->
+  <div id="gameContainer" class="screen">
+    <!-- Game content will be rendered here -->
   </div>
 
-  <!-- STEP 3 -->
-  <div id="step3" class="hidden">
-    <h2>Step 3: Filter the Information</h2>
-    <p>Which statement is correct?</p>
-    <div class="box" onclick="checkInfo(this, true)" style="cursor:pointer">
-      Exercise and meditation are proven to help reduce stress.
-    </div>
-    <div class="box" onclick="checkInfo(this, false)" style="cursor:pointer">
-      Drinking lots of coffee is the best way to reduce stress.
-    </div>
-    <div id="info-feedback"></div>
-    <br>
-    <button onclick="goStep(4)">Next →</button>
-  </div>
-
-  <!-- STEP 4 -->
-  <div id="step4" class="hidden">
-    <h2>Step 4: Write the Answer</h2>
-    <p>You are the AI now. Write an answer to the prompt:</p>
-    <em>"What is the best way to reduce stress in everyday life?"</em>
-    <br><br>
-    <textarea id="userAnswer" placeholder="Your answer..."></textarea>
-    <br>
-    <button onclick="goStep(5)">Submit →</button>
-  </div>
-
-  <!-- STEP 5: FEEDBACK -->
-  <div id="step5" class="hidden">
-    <h2>Result</h2>
-    <div class="box">
-      <strong>Your answer:</strong>
-      <p id="yourAnswer"></p>
-    </div>
-    <div class="box correct">
-      <strong>Reference answer (AI):</strong>
-      <p>Stress can best be reduced through regular exercise, meditation, and sufficient sleep. Social connections and taking breaks throughout the day also help build mental resilience.</p>
-    </div>
-    <button onclick="location.reload()">Try again</button>
-  </div>
-
-  <script>
-    function goStep(n) {
-      if (n === 5) {
-        document.getElementById('yourAnswer').textContent =
-          document.getElementById('userAnswer').value || '(no answer given)';
-      }
-      document.querySelectorAll('[id^="step"]').forEach(s => s.classList.add('hidden'));
-      document.getElementById('step' + n).classList.remove('hidden');
-    }
-
-    function checkKeyword(word) {
-      const correct = ['stress', 'reduce'];
-      const fb = document.getElementById('keyword-feedback');
-      if (correct.includes(word)) {
-        fb.innerHTML = 'Correct! "' + word + '" is an important keyword.';
-        fb.className = 'box correct';
-      } else {
-        fb.innerHTML = '"' + word + '" is a filler word – not a keyword.';
-        fb.className = 'box wrong';
-      }
-    }
-
-    function selectStrategy(s) {
-      const fb = document.getElementById('strategy-feedback');
-      if (s === 'accurate') {
-        fb.innerHTML = 'Good choice – a deeper analysis leads to better answers.';
-        fb.className = 'box correct';
-      } else {
-        fb.innerHTML = 'Fast can mean shallow – but sometimes it\'s good enough.';
-        fb.className = 'box wrong';
-      }
-    }
-
-    function checkInfo(el, correct) {
-      const fb = document.getElementById('info-feedback');
-      if (correct) {
-        el.className = 'box correct';
-        fb.innerHTML = 'Correct! That is reliable information.';
-        fb.className = 'box correct';
-      } else {
-        el.className = 'box wrong';
-        fb.innerHTML = 'Wrong! That is a typical AI misinformation example.';
-        fb.className = 'box wrong';
-      }
-    }
-  </script>
-
+  <!-- Scripts -->
+  <script src="js/storage.js"></script>
+  <script src="js/aiSimulation.js"></script>
+  <script src="js/promptSystem.js"></script>
+  <script src="js/feedbackSystem.js"></script>
+  <script src="js/gameLogic.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/home.js"></script>
 </body>
+
 </html>

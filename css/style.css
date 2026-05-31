@@ -14,3 +14,113 @@ It contains:
 This file ensures a consistent visual identity across all components.
 ========================================================
 */
+
+body {
+  overflow: hidden;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+#homeScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  position: relative;
+  /* transition placeholder: add scroll-related transitions here */
+}
+
+#homeScreen.scrolled-once {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 20px;
+  /* transition placeholder: add scroll state transitions here */
+}
+
+#homeScreen.scrolled-twice {
+  align-items: center;
+  justify-content: center;
+  /* transition placeholder: add scroll state transitions here */
+}
+
+#homeScreen.scrolled-thrice {
+  align-items: center;
+  justify-content: center;
+  /* transition placeholder: add scroll state transitions here */
+}
+
+.home-container {
+  text-align: center;
+}
+
+.home-container h1 {
+  position: relative;
+}
+
+#homeScreen.scrolled-once .home-container h1,
+#homeScreen.scrolled-twice .home-container h1,
+#homeScreen.scrolled-thrice .home-container h1,
+#homeScreen.scrolled-fourth .home-container h1 {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+#homeScreen.scrolled-once .scroll-indicator,
+#homeScreen.scrolled-twice .scroll-indicator,
+#homeScreen.scrolled-thrice .scroll-indicator,
+#homeScreen.scrolled-fourth .scroll-indicator {
+  display: none;
+}
+
+#homeScreen.scrolled-once .home-subtitle,
+#homeScreen.scrolled-twice .home-subtitle,
+#homeScreen.scrolled-thrice .home-subtitle,
+#homeScreen.scrolled-fourth .home-subtitle {
+  display: none;
+}
+
+.role-box {
+  display: none;
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid black;
+  padding: 20px;
+}
+
+#homeScreen.scrolled-twice .role-box,
+#homeScreen.scrolled-thrice .role-box,
+#homeScreen.scrolled-fourth .role-box {
+  display: block;
+}
+
+#homeScreen.scrolled-thrice .role-box {
+  left: 360px;
+  right: auto;
+}
+
+#homeScreen.scrolled-fourth .role-box {
+  left: 600px;
+  right: auto;
+}
+
+.home-start-button {
+  display: none;
+  position: absolute;
+  right: 20px;
+  bottom: 60px;
+  padding: 8px 12px;
+}
+
+
+#homeScreen.scrolled-fourth .home-start-button {
+  display: block;
+}
