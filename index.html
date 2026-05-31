@@ -1,149 +1,611 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--
-========================================================
-AI Learning Game - Main Entry Point
-========================================================
-
-This file is the starting point of the application.
-
-It contains:
-- The main structure of the user interface
-- Containers for prompts, choices, feedback, and progress
-- Links to CSS stylesheets
-- Links to JavaScript modules that control the game logic
-
-The page loads all components of the system and initializes the game.
-========================================================
--->
 <head>
   <meta charset="UTF-8">
-  <title>YOU-AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You-AI - Learn How AI Works</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
-    .hidden { display: none; }
-    .box { border: 1px solid #ccc; padding: 15px; margin: 15px 0; border-radius: 6px; }
-    .correct { background: #d4edda; }
-    .wrong { background: #f8d7da; }
-    textarea { width: 100%; height: 120px; padding: 10px; font-size: 1rem; }
+    :root {
+      --color-dark-bg: #121212;
+      --color-dark-panel: #242424;
+      --color-dark-lighter: #2B2B2B;
+      --color-accent-red: #A40000;
+      --color-accent-bright: #C00000;
+      --color-text-primary: #F2F2F2;
+      --color-text-secondary: #C8C8C8;
+      --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; width:100%; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--color-dark-bg);
+      color: var(--color-text-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
+    }
+    input.screen-nav { display: none; }
+    .screen {
+      display: none;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 6rem 4rem;
+    }
+    #s-intro:checked ~ .screens .screen-intro,
+    #s-mode:checked ~ .screens .screen-mode,
+    #s-prompt:checked ~ .screens .screen-prompt,
+    #s-keywords:checked ~ .screens .screen-keywords,
+    #s-semantic:checked ~ .screens .screen-semantic,
+    #s-neural:checked ~ .screens .screen-neural,
+    #s-answer:checked ~ .screens .screen-answer {
+      display: flex;
+    }
+    .screen-content { max-width:64rem; width:100%; }
+    .screen-content.narrow { max-width:56rem; }
+    .screen-content.wide { max-width:72rem; }
+    h1 { font-size:3.75rem; font-weight:700; letter-spacing:-0.025em; line-height:1.2; margin-bottom:1.5rem; }
+    h2 { font-size:2.25rem; font-weight:700; line-height:1.2; margin-bottom:1rem; }
+    h3 { font-size:1.125rem; font-weight:600; line-height:1.3; }
+    .subtitle { font-size:1.125rem; color:var(--color-text-secondary); line-height:1.75; margin-bottom:4rem; max-width:42rem; }
+    .flex { display:flex; }
+    .flex-1 { flex:1; }
+    .flex-wrap { flex-wrap:wrap; }
+    .items-center { align-items:center; }
+    .justify-center { justify-content:center; }
+    .justify-between { justify-content:space-between; }
+    .shrink-0 { flex-shrink:0; }
+    .grid { display:grid; }
+    .grid-cols-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .grid-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .gap-3 { gap:0.75rem; }
+    .gap-4 { gap:1rem; }
+    .gap-6 { gap:1.5rem; }
+    .gap-8 { gap:2rem; }
+    .gap-16 { gap:4rem; }
+    .space-y-3 > * + * { margin-top:0.75rem; }
+    .space-y-8 > * + * { margin-top:2rem; }
+    .w-full { width:100%; }
+    .w-72 { width:18rem; }
+    .w-80 { width:20rem; }
+    .mb-2 { margin-bottom:0.5rem; }
+    .mb-3 { margin-bottom:0.75rem; }
+    .mb-4 { margin-bottom:1rem; }
+    .mb-6 { margin-bottom:1.5rem; }
+    .mb-8 { margin-bottom:2rem; }
+    .mb-12 { margin-bottom:3rem; }
+    .mb-16 { margin-bottom:4rem; }
+    .mt-12 { margin-top:3rem; }
+    .p-6 { padding:1.5rem; }
+    .p-8 { padding:2rem; }
+    .p-10 { padding:2.5rem; }
+    .px-5 { padding-left:1.25rem; padding-right:1.25rem; }
+    .px-8 { padding-left:2rem; padding-right:2rem; }
+    .px-10 { padding-left:2.5rem; padding-right:2.5rem; }
+    .py-3 { padding-top:0.75rem; padding-bottom:0.75rem; }
+    .py-4 { padding-top:1rem; padding-bottom:1rem; }
+    .text-sm { font-size:0.875rem; }
+    .text-lg { font-size:1.125rem; }
+    .text-xl { font-size:1.25rem; }
+    .text-2xl { font-size:1.5rem; }
+    .text-3xl { font-size:1.875rem; }
+    .text-4xl { font-size:2.25rem; }
+    .text-6xl { font-size:3.75rem; }
+    .font-light { font-weight:300; }
+    .font-medium { font-weight:500; }
+    .font-semibold { font-weight:600; }
+    .font-bold { font-weight:700; }
+    .tracking-tight { letter-spacing:-0.025em; }
+    .tracking-wider { letter-spacing:0.05em; }
+    .uppercase { text-transform:uppercase; }
+    .leading-relaxed { line-height:1.625; }
+    .text-left { text-align:left; }
+    .text-center { text-align:center; }
+    .text-text-primary { color:var(--color-text-primary); }
+    .text-text-secondary { color:var(--color-text-secondary); }
+    .bg-dark-panel { background-color:var(--color-dark-panel); }
+    .bg-dark-lighter { background-color:var(--color-dark-lighter); }
+    .bg-accent-red { background-color:var(--color-accent-red); }
+    .border { border-width:1px; border-style:solid; }
+    .border-dark-lighter { border-color:var(--color-dark-lighter); }
+    .border-accent-red\/30 { border-color:rgba(164,0,0,0.3); }
+    .border-accent-red { border-color:var(--color-accent-red); }
+    .transition-all { transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .transition-colors { transition:color 0.2s cubic-bezier(0.4,0,0.2,1),background-color 0.2s cubic-bezier(0.4,0,0.2,1),border-color 0.2s cubic-bezier(0.4,0,0.2,1); }
+    .duration-200 { transition-duration:0.2s; }
+    .duration-300 { transition-duration:0.3s; }
+    .duration-500 { transition-duration:0.5s; }
+    .panel { background-color:var(--color-dark-panel); padding:2rem; }
+    .panel-bordered { background-color:var(--color-dark-panel); border:1px solid rgba(164,0,0,0.3); padding:2.5rem; }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center;
+      font-weight:600; font-size:1.125rem; padding:1rem 2.5rem;
+      background-color:var(--color-accent-red); color:var(--color-text-primary);
+      border:none; cursor:pointer; transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      font-family:inherit;
+    }
+    .btn:hover { background-color:var(--color-accent-bright); filter:brightness(1.1); }
+    .btn-disabled { background-color:var(--color-dark-lighter); color:var(--color-text-secondary); cursor:not-allowed; opacity:0.5; }
+    .btn-disabled:hover { background-color:var(--color-dark-lighter); filter:none; }
+    .btn-full { width:100%; }
+    .choice-card {
+      display:block; width:100%; padding:2rem; text-align:left;
+      background-color:var(--color-dark-panel); border:1px solid var(--color-dark-lighter);
+      color:var(--color-text-primary); cursor:pointer;
+      transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+      font-family:inherit; font-size:inherit;
+    }
+    .choice-card:hover { border-color:var(--color-text-secondary); }
+    .choice-card-label { font-size:1.25rem; font-weight:600; margin-bottom:0.5rem; }
+    .choice-card-desc { font-size:0.875rem; color:var(--color-text-secondary); }
+    input.choice-radio { display:none; }
+    #mode-own:checked ~ .screens .card-own,
+    #mode-internet:checked ~ .screens .card-internet {
+      background-color:var(--color-accent-red); border-color:var(--color-accent-red);
+    }
+    #mode-own:checked ~ .screens .card-own .choice-card-desc,
+    #mode-internet:checked ~ .screens .card-internet .choice-card-desc { color:rgba(242,242,242,0.8); }
+    #type-accurate:checked ~ .screens .card-accurate,
+    #type-fast:checked ~ .screens .card-fast {
+      background-color:var(--color-accent-red); border-color:var(--color-accent-red);
+    }
+    #type-accurate:checked ~ .screens .card-accurate .choice-card-desc,
+    #type-fast:checked ~ .screens .card-fast .choice-card-desc { color:rgba(242,242,242,0.8); }
+    .keyword-area { background-color:var(--color-dark-panel); padding:2.5rem; margin-bottom:2rem; }
+    .keyword-tags { display:flex; flex-wrap:wrap; gap:1rem; }
+    .keyword-toggle { display:none; }
+    .keyword-tag {
+      display:inline-flex; align-items:center; padding:0.75rem 1.25rem;
+      font-size:0.875rem; font-weight:500;
+      background-color:var(--color-dark-lighter); color:var(--color-text-secondary);
+      border:1px solid var(--color-dark-lighter); cursor:pointer;
+      transition:all 0.2s cubic-bezier(0.4,0,0.2,1);
+      font-family:inherit; user-select:none;
+    }
+    .keyword-tag:hover { color:var(--color-text-primary); }
+    .keyword-toggle:checked + .keyword-tag {
+      background-color:var(--color-accent-red); border-color:var(--color-accent-red); color:var(--color-text-primary);
+    }
+    .keyword-counter { font-size:0.875rem; color:var(--color-text-secondary); }
+    .text-input {
+      width:100%; padding:1rem 1.25rem;
+      background-color:var(--color-dark-lighter); color:var(--color-text-primary);
+      border:1px solid transparent; transition:border-color 0.2s cubic-bezier(0.4,0,0.2,1);
+      font-size:1rem; font-family:inherit; outline:none;
+    }
+    .text-input:focus { border-color:rgba(164,0,0,0.5); }
+    .text-input::placeholder { color:rgba(200,200,200,0.4); }
+    .status-dot { width:0.5rem; height:0.5rem; background-color:var(--color-dark-lighter); transition:background-color 0.2s cubic-bezier(0.4,0,0.2,1); }
+    .dot-active { background-color:var(--color-accent-bright); }
+    .processing-panel { background-color:var(--color-dark-panel); border:1px solid rgba(164,0,0,0.3); padding:1.5rem; }
+    .processing-list { display:flex; flex-direction:column; gap:0.75rem; }
+    .processing-item { display:flex; align-items:center; gap:0.75rem; }
+    .processing-text { font-size:0.875rem; color:var(--color-text-secondary); }
+    .section-label { font-size:0.875rem; font-weight:600; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1.5rem; }
+    .badge { display:inline-flex; align-items:center; padding:0.5rem 1rem; font-size:0.875rem; background-color:var(--color-dark-panel); color:var(--color-text-secondary); }
+    .badges { display:flex; gap:1rem; margin-bottom:3rem; flex-wrap:wrap; }
+    .answer-display { background-color:var(--color-dark-panel); border:1px solid rgba(164,0,0,0.3); padding:2.5rem; margin-bottom:3rem; }
+    .answer-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; }
+    .answer-dot { width:0.75rem; height:0.75rem; background-color:var(--color-accent-red); }
+    .answer-label { font-size:0.875rem; font-weight:600; color:var(--color-accent-red); text-transform:uppercase; letter-spacing:0.05em; }
+    .answer-text { font-size:1.125rem; color:var(--color-text-primary); line-height:1.75; white-space:pre-line; }
+    .network-container { flex:1; background-color:var(--color-dark-panel); position:relative; overflow:hidden; min-height:500px; }
+    .network-svg { position:absolute; inset:0; width:100%; height:100%; }
+    .neuron { transition:fill 0.5s ease, stroke 0.5s ease; }
+    .neuron-line { transition:stroke 0.5s ease, stroke-width 0.5s ease; }
+    .processing-status { width:100%; background-color:var(--color-dark-panel); color:var(--color-text-secondary); font-weight:600; font-size:1.125rem; padding:1rem 2rem; text-align:center; }
+    .feature-card { background-color:var(--color-dark-panel); padding:2rem; }
+    .feature-card-title { font-size:1.125rem; font-weight:600; color:var(--color-text-primary); margin-bottom:0.75rem; }
+    .feature-card-desc { font-size:0.875rem; color:var(--color-text-secondary); line-height:1.6; }
+    .progress-value { font-size:1.875rem; font-weight:700; color:var(--color-text-primary); }
+    @media (max-width:1024px) { .screen { padding:4rem 2rem; } .grid-cols-3 { grid-template-columns:repeat(2,minmax(0,1fr)); } .gap-16 { gap:2rem; } }
+    @media (max-width:768px) { h1 { font-size:2.25rem; } h2 { font-size:1.875rem; } .screen { padding:3rem 1rem; } .grid-cols-2,.grid-cols-3 { grid-template-columns:1fr; } .gap-16 { gap:1.5rem; } .w-72,.w-80 { width:100%; } }
   </style>
 </head>
 <body>
 
-  <!-- STEP 1 -->
-  <div id="step1">
-    <h2>Step 1: Read the Prompt</h2>
-    <div class="box">
-      <strong>Prompt:</strong> What is the best way to reduce stress in everyday life?
-    </div>
-    <p>Which 2 words are the most important keywords?</p>
-    <button onclick="checkKeyword('stress')">stress</button>
-    <button onclick="checkKeyword('what')">what</button>
-    <button onclick="checkKeyword('reduce')">reduce</button>
-    <button onclick="checkKeyword('the')">the</button>
-    <div id="keyword-feedback"></div>
-    <br>
-    <button onclick="goStep(2)">Next →</button>
-  </div>
+  <!-- Screen Navigation Radios -->
+  <input type="radio" name="screen" id="s-intro" class="screen-nav" checked>
+  <input type="radio" name="screen" id="s-mode" class="screen-nav">
+  <input type="radio" name="screen" id="s-prompt" class="screen-nav">
+  <input type="radio" name="screen" id="s-keywords" class="screen-nav">
+  <input type="radio" name="screen" id="s-semantic" class="screen-nav">
+  <input type="radio" name="screen" id="s-neural" class="screen-nav">
+  <input type="radio" name="screen" id="s-answer" class="screen-nav">
 
-  <!-- STEP 2 -->
-  <div id="step2" class="hidden">
-    <h2>Step 2: Choose a Strategy</h2>
-    <p>How should the AI respond?</p>
-    <button onclick="selectStrategy('fast')">Fast</button>
-    <button onclick="selectStrategy('accurate')">Accurate</button>
-    <div id="strategy-feedback"></div>
-    <br>
-    <button onclick="goStep(3)">Next →</button>
-  </div>
+  <!-- Mode & Type Selection Radios -->
+  <input type="radio" name="mode" id="mode-own" class="choice-radio">
+  <input type="radio" name="mode" id="mode-internet" class="choice-radio">
+  <input type="radio" name="type" id="type-accurate" class="choice-radio">
+  <input type="radio" name="type" id="type-fast" class="choice-radio">
 
-  <!-- STEP 3 -->
-  <div id="step3" class="hidden">
-    <h2>Step 3: Filter the Information</h2>
-    <p>Which statement is correct?</p>
-    <div class="box" onclick="checkInfo(this, true)" style="cursor:pointer">
-      Exercise and meditation are proven to help reduce stress.
-    </div>
-    <div class="box" onclick="checkInfo(this, false)" style="cursor:pointer">
-      Drinking lots of coffee is the best way to reduce stress.
-    </div>
-    <div id="info-feedback"></div>
-    <br>
-    <button onclick="goStep(4)">Next →</button>
-  </div>
+  <!-- Keyword Toggle Checkboxes -->
+  <input type="checkbox" id="kw0" class="keyword-toggle">
+  <input type="checkbox" id="kw1" class="keyword-toggle">
+  <input type="checkbox" id="kw2" class="keyword-toggle">
+  <input type="checkbox" id="kw3" class="keyword-toggle">
+  <input type="checkbox" id="kw4" class="keyword-toggle">
+  <input type="checkbox" id="kw5" class="keyword-toggle">
 
-  <!-- STEP 4 -->
-  <div id="step4" class="hidden">
-    <h2>Step 4: Write the Answer</h2>
-    <p>You are the AI now. Write an answer to the prompt:</p>
-    <em>"What is the best way to reduce stress in everyday life?"</em>
-    <br><br>
-    <textarea id="userAnswer" placeholder="Your answer..."></textarea>
-    <br>
-    <button onclick="goStep(5)">Submit →</button>
-  </div>
+  <div class="screens">
 
-  <!-- STEP 5: FEEDBACK -->
-  <div id="step5" class="hidden">
-    <h2>Result</h2>
-    <div class="box">
-      <strong>Your answer:</strong>
-      <p id="yourAnswer"></p>
+    <!-- SCREEN 1: Intro -->
+    <div class="screen screen-intro">
+      <div class="screen-content">
+        <h1 class="tracking-tight">You-AI</h1>
+        <p class="subtitle">
+          Discover how artificial intelligence processes your prompts.
+          Experience the journey from input to understanding through
+          an interactive step-by-step simulation.
+        </p>
+        <div class="grid grid-cols-3 gap-6 mb-16">
+          <div class="feature-card">
+            <h3 class="feature-card-title">Interactive Learning</h3>
+            <p class="feature-card-desc">Engage with each stage of AI prompt processing through hands-on interaction</p>
+          </div>
+          <div class="feature-card">
+            <h3 class="feature-card-title">Visual Processing</h3>
+            <p class="feature-card-desc">See how neural networks analyze and understand your input in real-time</p>
+          </div>
+          <div class="feature-card">
+            <h3 class="feature-card-title">Step-by-Step</h3>
+            <p class="feature-card-desc">Follow the complete pipeline from raw input to structured understanding</p>
+          </div>
+        </div>
+        <label for="s-mode" class="btn">Get Started</label>
+      </div>
     </div>
-    <div class="box correct">
-      <strong>Reference answer (AI):</strong>
-      <p>Stress can best be reduced through regular exercise, meditation, and sufficient sleep. Social connections and taking breaks throughout the day also help build mental resilience.</p>
+
+    <!-- SCREEN 2: Mode Selection -->
+    <div class="screen screen-mode">
+      <div class="screen-content narrow">
+        <h2>Configure Mode</h2>
+        <p class="subtitle">Select how the AI should process your request. Choose the knowledge source and response style.</p>
+
+        <div class="mb-16">
+          <h3 class="section-label">Answer Mode</h3>
+          <div class="grid grid-cols-2 gap-6">
+            <label for="mode-own" class="choice-card card-own">
+              <div class="choice-card-label">Own Knowledge</div>
+              <div class="choice-card-desc">Answer based on internal training data</div>
+            </label>
+            <label for="mode-internet" class="choice-card card-internet">
+              <div class="choice-card-label">Internet</div>
+              <div class="choice-card-desc">Search and synthesize from web sources</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-16">
+          <h3 class="section-label">Type of Answer</h3>
+          <div class="grid grid-cols-2 gap-6">
+            <label for="type-accurate" class="choice-card card-accurate">
+              <div class="choice-card-label">Accurate Answer</div>
+              <div class="choice-card-desc">Precise and thorough response</div>
+            </label>
+            <label for="type-fast" class="choice-card card-fast">
+              <div class="choice-card-label">Fast Answer</div>
+              <div class="choice-card-desc">Quick and concise response</div>
+            </label>
+          </div>
+        </div>
+
+        <label for="s-prompt" class="btn" id="btn-continue">Continue</label>
+        <span class="btn btn-disabled" id="btn-continue-disabled">Continue</span>
+      </div>
     </div>
-    <button onclick="location.reload()">Try again</button>
+
+    <!-- SCREEN 3: Prompt -->
+    <div class="screen screen-prompt">
+      <div class="screen-content">
+        <h2>Prompt</h2>
+        <p class="subtitle">This is the input the AI will process. Read it carefully before proceeding.</p>
+        <div class="panel-bordered mb-16">
+          <p class="text-xl leading-relaxed font-light">
+            &ldquo;Explain the importance of machine learning in modern healthcare&rdquo;
+          </p>
+        </div>
+        <label for="s-keywords" class="btn">Analyze Prompt</label>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Keyword Selection -->
+    <div class="screen screen-keywords">
+      <div class="screen-content narrow">
+        <h2>Keywords</h2>
+        <p class="subtitle">Select the most important keywords from the prompt. The AI uses these to understand the core topics. Choose at least 3.</p>
+
+        <div class="keyword-area">
+          <div class="keyword-tags">
+            <label><input type="checkbox" id="kw0" class="keyword-toggle"><span class="keyword-tag">explain</span></label>
+            <label><input type="checkbox" id="kw1" class="keyword-toggle"><span class="keyword-tag">importance</span></label>
+            <label><input type="checkbox" id="kw2" class="keyword-toggle"><span class="keyword-tag">machine</span></label>
+            <label><input type="checkbox" id="kw3" class="keyword-toggle"><span class="keyword-tag">learning</span></label>
+            <label><input type="checkbox" id="kw4" class="keyword-toggle"><span class="keyword-tag">modern</span></label>
+            <label><input type="checkbox" id="kw5" class="keyword-toggle"><span class="keyword-tag">healthcare</span></label>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="keyword-counter">Selected: <span id="kw-count">0</span>/3 required</span>
+          <label for="s-semantic" class="btn btn-disabled" id="kw-continue">Continue</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: Semantic Analysis -->
+    <div class="screen screen-semantic">
+      <div class="screen-content">
+        <h2>Semantic Analysis</h2>
+        <p class="subtitle">The AI analyzes the meaning behind the words. Answer these questions to simulate how AI understands context and intent.</p>
+
+        <div class="flex gap-16">
+          <div class="flex-1 space-y-8">
+            <div class="panel">
+              <h3 class="mb-4">What is the topic?</h3>
+              <input type="text" class="text-input" id="sa-input-0" placeholder="Type your analysis..." value="Machine learning in healthcare">
+            </div>
+            <div class="panel">
+              <h3 class="mb-4">What does the user want?</h3>
+              <input type="text" class="text-input" id="sa-input-1" placeholder="Type your analysis..." value="Understand importance of ML in healthcare">
+            </div>
+            <div class="panel">
+              <h3 class="mb-4">Which language is being used?</h3>
+              <input type="text" class="text-input" id="sa-input-2" placeholder="Type your analysis..." value="English">
+            </div>
+          </div>
+
+          <div class="w-80 shrink-0">
+            <div class="processing-panel">
+              <h3 class="section-label mb-4">Processing</h3>
+              <div class="processing-list">
+                <div class="processing-item">
+                  <div class="status-dot" id="dot-0"></div>
+                  <span class="processing-text">Topic extraction</span>
+                </div>
+                <div class="processing-item">
+                  <div class="status-dot" id="dot-1"></div>
+                  <span class="processing-text">Intent analysis</span>
+                </div>
+                <div class="processing-item">
+                  <div class="status-dot" id="dot-2"></div>
+                  <span class="processing-text">Language detection</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-12">
+          <label for="s-neural" class="btn btn-disabled" id="sa-continue">Process in Neural Network</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 6: Neural Network -->
+    <div class="screen screen-neural">
+      <div class="screen-content wide">
+        <div class="flex gap-16">
+          <div class="w-72 shrink-0">
+            <h2>Neural Network</h2>
+            <p class="subtitle mb-8" style="max-width:none">Watch how information flows through the neural network. Each node activates as the AI processes your input.</p>
+            <div class="panel p-6 mb-8">
+              <div class="text-sm text-text-secondary mb-2">Processing Progress</div>
+              <div class="progress-value" id="net-progress">0/8</div>
+            </div>
+            <button class="btn btn-full" id="btn-activate">Activate Network</button>
+            <label for="s-answer" class="btn btn-full" id="btn-generate" style="display:none">Generate Answer</label>
+            <div class="processing-status" id="btn-processing" style="display:none">Processing...</div>
+          </div>
+          <div class="network-container">
+            <svg width="100%" height="100%" viewBox="0 0 560 380" class="network-svg">
+              <line x1="100" y1="100" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="100" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="100" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="100" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="180" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="180" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="180" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="180" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="260" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="260" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="260" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="260" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="340" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="340" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="340" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="100" y1="340" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="280" y1="60" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="280" y1="150" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="280" y1="240" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <line x1="280" y1="330" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
+              <circle cx="100" cy="100" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="100" y="104" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">explain</text>
+              <circle cx="100" cy="180" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="100" y="184" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">importa..</text>
+              <circle cx="100" cy="260" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="100" y="264" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">machine</text>
+              <circle cx="100" cy="340" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="100" y="344" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">learning</text>
+              <circle cx="280" cy="60" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="280" y="64" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N1</text>
+              <circle cx="280" cy="150" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="280" y="154" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N2</text>
+              <circle cx="280" cy="240" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="280" y="244" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N3</text>
+              <circle cx="280" cy="330" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="280" y="334" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N4</text>
+              <circle cx="460" cy="200" r="28" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
+              <text x="460" y="204" text-anchor="middle" fill="#C8C8C8" font-size="10" font-family="Inter,sans-serif">Response</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 7: Final Answer -->
+    <div class="screen screen-answer">
+      <div class="screen-content">
+        <h2>Generated Answer</h2>
+        <p class="subtitle">The AI has processed your input through the neural network and generated a response.</p>
+        <div class="badges">
+          <span class="badge" id="badge-mode">Mode: Own Knowledge</span>
+          <span class="badge" id="badge-type">Type: Accurate</span>
+          <span class="badge">Keywords: 6</span>
+        </div>
+        <div class="answer-display">
+          <div class="answer-header">
+            <div class="answer-dot"></div>
+            <span class="answer-label">AI Response</span>
+          </div>
+          <p class="answer-text">Based on your prompt, the AI has analyzed the topic of "Explain the importance of machine learning in modern healthcare" through a comprehensive evaluation of the key concepts identified: explain, importance, machine, learning, modern, healthcare.
+
+Machine learning plays a transformative role in modern healthcare by enabling early disease detection through pattern recognition in medical imaging, personalizing treatment plans based on patient data analysis, accelerating drug discovery by predicting molecular interactions, and improving operational efficiency through predictive analytics for patient flow and resource allocation.
+
+The integration of AI-driven diagnostic tools has shown remarkable accuracy in detecting conditions such as cancer, cardiovascular diseases, and neurological disorders at earlier, more treatable stages. Furthermore, machine learning algorithms continuously improve their performance as they process more data, creating a virtuous cycle of increasingly precise and personalized healthcare delivery.</p>
+        </div>
+        <label for="s-intro" class="btn">Start Over</label>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    function goStep(n) {
-      if (n === 5) {
-        document.getElementById('yourAnswer').textContent =
-          document.getElementById('userAnswer').value || '(no answer given)';
+    // Keyword counter
+    function updateKwCount() {
+      const checked = document.querySelectorAll('.keyword-toggle:checked').length;
+      document.getElementById('kw-count').textContent = checked;
+      const btn = document.getElementById('kw-continue');
+      if (checked >= 3) {
+        btn.classList.remove('btn-disabled');
+      } else {
+        btn.classList.add('btn-disabled');
       }
-      document.querySelectorAll('[id^="step"]').forEach(s => s.classList.add('hidden'));
-      document.getElementById('step' + n).classList.remove('hidden');
+    }
+    document.querySelectorAll('.keyword-toggle').forEach(cb => cb.addEventListener('change', updateKwCount));
+    updateKwCount();
+
+    // Mode selection continue button
+    function updateContinueBtn() {
+      const mode = document.querySelector('.choice-radio[name="mode"]:checked');
+      const type = document.querySelector('.choice-radio[name="type"]:checked');
+      const enabled = document.getElementById('btn-continue');
+      const disabled = document.getElementById('btn-continue-disabled');
+      if (mode && type) {
+        enabled.style.display = 'inline-flex';
+        disabled.style.display = 'none';
+      } else {
+        enabled.style.display = 'none';
+        disabled.style.display = 'inline-flex';
+      }
+    }
+    document.querySelectorAll('.choice-radio').forEach(r => r.addEventListener('change', updateContinueBtn));
+    updateContinueBtn();
+
+    // Semantic analysis: enable continue when all inputs have text
+    function updateSaContinue() {
+      const inputs = document.querySelectorAll('.text-input[id^="sa-input"]');
+      let allFilled = true;
+      inputs.forEach(inp => { if (!inp.value.trim()) allFilled = false; });
+      const btn = document.getElementById('sa-continue');
+      if (allFilled) btn.classList.remove('btn-disabled');
+      else btn.classList.add('btn-disabled');
+    }
+    document.querySelectorAll('.text-input[id^="sa-input"]').forEach(inp => {
+      inp.addEventListener('input', updateSaContinue);
+      // Also update dot status
+      inp.addEventListener('input', function() {
+        const idx = this.id.replace('sa-input-', '');
+        const dot = document.getElementById('dot-' + idx);
+        if (dot) {
+          if (this.value.trim()) dot.classList.add('dot-active');
+          else dot.classList.remove('dot-active');
+        }
+      });
+      // Initial dot state
+      const idx = inp.id.replace('sa-input-', '');
+      const dot = document.getElementById('dot-' + idx);
+      if (dot && inp.value.trim()) dot.classList.add('dot-active');
+    });
+    updateSaContinue();
+
+    // Network animation state
+    let netTimer = null;
+    let animating = false;
+    let completed = false;
+    const progressEl = document.getElementById('net-progress');
+    const btnActivate = document.getElementById('btn-activate');
+    const btnGenerate = document.getElementById('btn-generate');
+    const btnProcessing = document.getElementById('btn-processing');
+    const nnodes = document.querySelectorAll('.nn');
+    const nlines = document.querySelectorAll('.nl');
+
+    function resetNet() {
+      if (netTimer) { clearTimeout(netTimer); netTimer = null; }
+      animating = false;
+      completed = false;
+      nnodes.forEach(n => { n.setAttribute('fill', '#2B2B2B'); n.setAttribute('stroke', '#444'); });
+      nlines.forEach(l => { l.setAttribute('stroke', '#2B2B2B'); l.setAttribute('stroke-width', '1'); });
+      progressEl.textContent = '0/8';
+      btnActivate.style.display = 'block';
+      btnGenerate.style.display = 'none';
+      btnProcessing.style.display = 'none';
     }
 
-    function checkKeyword(word) {
-      const correct = ['stress', 'reduce'];
-      const fb = document.getElementById('keyword-feedback');
-      if (correct.includes(word)) {
-        fb.innerHTML = 'Correct! "' + word + '" is an important keyword.';
-        fb.className = 'box correct';
-      } else {
-        fb.innerHTML = '"' + word + '" is a filler word – not a keyword.';
-        fb.className = 'box wrong';
-      }
-    }
+    btnActivate.addEventListener('click', function() {
+      if (animating || completed) return;
+      animating = true;
+      btnActivate.style.display = 'none';
+      btnProcessing.style.display = 'block';
+      btnGenerate.style.display = 'none';
 
-    function selectStrategy(s) {
-      const fb = document.getElementById('strategy-feedback');
-      if (s === 'accurate') {
-        fb.innerHTML = 'Good choice – a deeper analysis leads to better answers.';
-        fb.className = 'box correct';
-      } else {
-        fb.innerHTML = 'Fast can mean shallow – but sometimes it\'s good enough.';
-        fb.className = 'box wrong';
-      }
-    }
+      let step = 0;
+      const maxSteps = 7;
 
-    function checkInfo(el, correct) {
-      const fb = document.getElementById('info-feedback');
-      if (correct) {
-        el.className = 'box correct';
-        fb.innerHTML = 'Correct! That is reliable information.';
-        fb.className = 'box correct';
-      } else {
-        el.className = 'box wrong';
-        fb.innerHTML = 'Wrong! That is a typical AI misinformation example.';
-        fb.className = 'box wrong';
+      function animStep() {
+        if (step < 4) {
+          const n = nnodes[step];
+          if (n) { n.setAttribute('fill', '#C00000'); n.setAttribute('stroke', '#A40000'); }
+          for (let i = step * 4; i < step * 4 + 4 && i < nlines.length; i++) {
+            nlines[i].setAttribute('stroke', '#C00000');
+            nlines[i].setAttribute('stroke-width', '2');
+          }
+        } else if (step === 4) {
+          for (let i = 4; i < 8 && i < nnodes.length; i++) {
+            nnodes[i].setAttribute('fill', '#C00000');
+            nnodes[i].setAttribute('stroke', '#A40000');
+          }
+        } else if (step === 5) {
+          for (let i = 16; i < 20 && i < nlines.length; i++) {
+            nlines[i].setAttribute('stroke', '#C00000');
+            nlines[i].setAttribute('stroke-width', '2');
+          }
+        } else if (step === 6) {
+          const n = nnodes[8];
+          if (n) { n.setAttribute('fill', '#C00000'); n.setAttribute('stroke', '#A40000'); }
+        }
+        step++;
+        progressEl.textContent = Math.min(step, maxSteps) + '/8';
+        if (step < maxSteps) {
+          netTimer = setTimeout(animStep, 600);
+        } else {
+          btnProcessing.style.display = 'none';
+          btnGenerate.style.display = 'block';
+          animating = false;
+          completed = true;
+        }
       }
-    }
+      animStep();
+    });
+
+    // Reset on navigation to intro
+    document.querySelectorAll('input.screen-nav').forEach(r => {
+      r.addEventListener('change', function() {
+        if (this.id === 's-intro') resetNet();
+      });
+    });
   </script>
-
 </body>
 </html>
