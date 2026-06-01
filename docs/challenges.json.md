@@ -22,7 +22,7 @@ Each entry in the JSON array has the following structure:
 {
   "id": number,
   "prompt": string,
-  "difficulty": string,
+  "difficulty": string, (optional)
   "steps": array of strings,
   "correctPath": array of strings,
   "hints": array of strings (optional)
@@ -48,7 +48,7 @@ Example:
 "Explain how AI generates text"
 
 
-difficulty
+difficulty (optional)
 --------------------------------------------------------
 Defines how complex the challenge is.
 

@@ -12,7 +12,7 @@ what the user must solve or explore.
 
 They are designed to:
 - vary gameplay
-- support multiple difficulty levels
+- support multiple difficulty levels (optional)
 - create realistic AI interaction scenarios
 
 ========================================================
@@ -25,7 +25,7 @@ The file contains an array of prompt objects:
   "id": number,
   "text": string,
   "category": string,
-  "difficulty": string
+  "difficulty": string (optional)
 }
 
 ========================================================
@@ -59,7 +59,7 @@ Possible values:
 - "problem-solving"
 
 
-difficulty
+difficulty (optional)
 --------------------------------------------------------
 Defines complexity level.
 
@@ -74,7 +74,7 @@ USAGE IN SYSTEM
 
 Used by:
 - promptSystem.js → selects and displays prompts
-- gameLogic.js → adjusts difficulty progression
+- gameLogic.js → adjusts difficulty progression (optional)
 - aiSimulation.js → determines simulation depth
 
 ========================================================
@@ -84,7 +84,7 @@ DESIGN GOAL
 This file is designed to:
 ✔ Provide variety in gameplay
 ✔ Allow easy expansion of prompt types
-✔ Support structured difficulty scaling
+✔ Support structured difficulty scaling (optinal)
 ✔ Keep content separated from logic
 
 ========================================================

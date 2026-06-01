@@ -41,6 +41,30 @@ The page loads all components of the system and initializes the game.
     <button class="home-start-button">Get Started</button>
   </div>
 
+  <div id="answerModeScreen" class="screen">
+    <div class="answer-mode-container">
+      <div class="answer-mode-info">
+        <p>Here you will choose in what way you would like to answer<br>the prompt and what type of answer you would like to give.</p>
+      </div>
+      <div class="answer-mode-grid">
+        <div class="answer-mode-group" data-group="answer-mode">
+          <h2>Answer mode</h2>
+          <div class="answer-mode-row">
+            <button class="answer-mode-button" data-value="own-knowledge">Own Knowledge</button>
+            <button class="answer-mode-button" data-value="internet-search">Internet search</button>
+          </div>
+        </div>
+        <div class="answer-mode-group" data-group="answer-type">
+          <h2>Type of answer</h2>
+          <div class="answer-mode-row">
+            <button class="answer-mode-button" data-value="accurate-answer">Accurate Answer</button>
+            <button class="answer-mode-button" data-value="fast-answer">Fast Answer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Game Container -->
   <div id="gameContainer" class="screen">
     <!-- Game content will be rendered here -->
@@ -54,6 +78,7 @@ The page loads all components of the system and initializes the game.
   <script src="js/gameLogic.js"></script>
   <script src="js/main.js"></script>
   <script src="js/home.js"></script>
+  <script src="js/answerModeSelection.js"></script>
 </body>
 
 </html>

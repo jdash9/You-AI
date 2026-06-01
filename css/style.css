@@ -120,7 +120,75 @@ body {
   padding: 8px 12px;
 }
 
-
 #homeScreen.scrolled-fourth .home-start-button {
   display: block;
+}
+
+#answerModeScreen {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: relative;
+  height: 100vh;
+  padding: 20px;
+}
+
+.answer-mode-container {
+  width: 100%;
+  position: relative;
+  height: 100%;
+}
+
+.answer-mode-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  line-height: 1.4;
+}
+
+.answer-mode-info p {
+  margin: 0;
+}
+
+.answer-mode-grid {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  width: min(640px, 100%);
+}
+
+.answer-mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+}
+
+.answer-mode-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.answer-mode-group h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.answer-mode-button {
+  flex: 1;
+  min-width: 160px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.answer-mode-button.selected {
+  background: rgba(0, 0, 0, 0.08);
 }
