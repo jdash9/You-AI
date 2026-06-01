@@ -3,6 +3,8 @@ let scrollSensitivity = 0;
 const SCROLL_THRESHOLD = 50;
 const SCROLL_LIMIT = 100; // Maximum scroll accumulation
 let scrollState = 0;
+let slideOffset = 0;
+const SLIDE_SPEED = 1.5; // Adjust this value to control slide speed
 
 document.addEventListener('wheel', (e) => {
   const homeScreen = document.getElementById('homeScreen');
@@ -12,7 +14,30 @@ document.addEventListener('wheel', (e) => {
   }
 
   e.preventDefault();
-  
+
+  // State 0 → 1 slide animation
+if (e.deltaY > 0 && scrollState === 0) {
+  slideOffset = Math.min(window.innerHeight, slideOffset + Math.abs(e.deltaY) * SLIDE_SPEED);
+  homeScreen.style.transform = `translateY(-${slideOffset}px)`;
+  if (slideOffset >= window.innerHeight) {
+    homeScreen.style.transform = '';
+    slideOffset = 0;
+    homeScreen.classList.add('scrolled-once');
+    scrollState = 1;
+    scrollSensitivity = 0;
+    const rb = homeScreen.querySelector('.role-box');
+    if (rb) rb.innerHTML = 'Here you will take the role of the AI';
+  }
+  return;
+}
+
+// Scroll up to return
+if (slideOffset > 0 && e.deltaY < 0) {
+  slideOffset = Math.max(0, slideOffset - Math.abs(e.deltaY) * SLIDE_SPEED);
+  homeScreen.style.transform = slideOffset > 0 ? `translateY(-${slideOffset}px)` : '';
+  return;
+}
+
   scrollSensitivity += e.deltaY;
   
   // Limit scroll sensitivity to prevent excessive accumulation
