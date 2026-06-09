@@ -4,19 +4,15 @@
 ========================================================
 AI Learning Game - Main Entry Point
 ========================================================
-
 This file is the starting point of the application.
-
 It contains:
 - The main structure of the user interface
 - Containers for prompts, choices, feedback, and progress
 - Links to CSS stylesheets
 - Links to JavaScript modules that control the game logic
-
 The page loads all components of the system and initializes the game.
 ========================================================
 -->
-
 <head>
   <meta charset="UTF-8">
   <title>YOU-AI</title>
@@ -24,30 +20,29 @@ The page loads all components of the system and initializes the game.
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/ui.css">
   <link rel="stylesheet" href="css/feedback.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
   <!-- Home Screen -->
   <div id="homeScreen" class="screen active">
-    <div class="home-container">
-      <h1 class="home-title">You-AI</h1>
-      <p class="home-subtitle">AI is not magic.<br> 
-        You-AI, Do-AI.</p>
-      <div class="scroll-indicator">↓</div>
+    <!-- Title Card: slides away on scroll -->
+    <div id="titleCard">
+      <div class="home-container">
+        <h1 class="home-title">You-AI</h1>
+        <p class="home-subtitle">AI is not magic.<br>You-AI, Do-AI.</p>
+        <div class="scroll-indicator">↓</div>
+      </div>
     </div>
-    <div class="role-box">
-      <p>Here you will take the role of the AI</p>
-    </div>
+    <!-- Background content: revealed after animation -->
+    <h1 class="background-title">You-AI</h1>
+    <div class="role-box"></div>
     <button class="home-start-button">Get Started</button>
   </div>
-
   <!-- Main Game Container -->
   <div id="gameContainer" class="screen">
     <!-- Game content will be rendered here -->
   </div>
-
   <!-- Scripts -->
   <script src="js/storage.js"></script>
   <script src="js/aiSimulation.js"></script>
@@ -57,5 +52,4 @@ The page loads all components of the system and initializes the game.
   <script src="js/main.js"></script>
   <script src="js/home.js"></script>
 </body>
-
 </html>

@@ -2,15 +2,12 @@
 ========================================================
 Global Stylesheet
 ========================================================
-
 This file defines the overall look and layout of the app.
-
 It contains:
 - Global layout rules (spacing, alignment, grid/flex)
 - Typography (fonts, text sizes)
 - Color scheme and theme variables
 - Base styling for the entire application
-
 This file ensures a consistent visual identity across all components.
 ========================================================
 */
@@ -30,53 +27,43 @@ body {
   display: block;
 }
 
-#homeScreen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url('hsb_background_image.jpg'); 
-  background-size: cover;
-  background-position: center;
-  filter: blur(8px);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  z-index: -1;
-}
-
-#homeScreen.scrolled-once::before,
-#homeScreen.scrolled-twice::before,
-#homeScreen.scrolled-thrice::before,
-#homeScreen.scrolled-fourth::before {
-  opacity: 1;
-}
-
 #homeScreen {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100vh;
   position: relative;
-  will-change: transform ;
-  /* transition placeholder: add scroll-related transitions here */
+  overflow: hidden;
 }
 
-#homeScreen.scrolled-once {
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 20px;
-  /* transition placeholder: add scroll state transitions here */
+/* Background image */
+#homeScreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('hsb_background_image.jpg'); /* Dateiname anpassen */
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
 }
 
-#homeScreen.scrolled-twice {
+#homeScreen.animating::before,
+#homeScreen.scrolled-once::before {
+  opacity: 1;
+}
+
+/* Title Card */
+#titleCard {
+  position: absolute;
+  inset: 0;
+  background-color: #2d2d2d;
+  display: flex;
   align-items: center;
   justify-content: center;
-  /* transition placeholder: add scroll state transitions here */
-}
-
-#homeScreen.scrolled-thrice {
-  align-items: center;
-  justify-content: center;
-  /* transition placeholder: add scroll state transitions here */
+  z-index: 10;
 }
 
 .home-container {
@@ -85,90 +72,67 @@ body {
   top: 15vh;
 }
 
-.home-container h1 {
-  position: relative;
+.home-title {
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 128px;
+  line-height: 1;
   margin-bottom: 1px;
 }
+
 .home-subtitle {
   font-size: 64px;
   font-weight: 300;
   margin-top: 0;
 }
 
-#homeScreen.scrolled-once .home-container,
-#homeScreen.scrolled-twice .home-container,
-#homeScreen.scrolled-thrice .home-container,
-#homeScreen.scrolled-fourth .home-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-#homeScreen.scrolled-once .home-container h1,
-#homeScreen.scrolled-twice .home-container h1,
-#homeScreen.scrolled-thrice .home-container h1,
-#homeScreen.scrolled-fourth .home-container h1 {
+/* You-AI label auf der Hintergrundseite */
+.background-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  display: none;
   position: absolute;
   top: 20px;
   left: 20px;
-  font-size: 128px;
-  line-height: 1;
+  font-size: 32px;
   margin: 0;
-  white-space: nowrap;
-  
+  z-index: 5;
 }
 
-#homeScreen.scrolled-once .scroll-indicator,
-#homeScreen.scrolled-twice .scroll-indicator,
-#homeScreen.scrolled-thrice .scroll-indicator,
-#homeScreen.scrolled-fourth .scroll-indicator {
-  display: none;
-}
-
-#homeScreen.scrolled-once .home-subtitle,
-#homeScreen.scrolled-twice .home-subtitle,
-#homeScreen.scrolled-thrice .home-subtitle,
-#homeScreen.scrolled-fourth .home-subtitle {
-  display: none;
-}
-
-.role-box {
-  display: none;
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #961010;
-  border: none;
-  padding: 20px;
-}
-
-#homeScreen.scrolled-twice .role-box,
-#homeScreen.scrolled-thrice .role-box,
-#homeScreen.scrolled-fourth .role-box {
+#homeScreen.scrolled-once .background-title {
   display: block;
 }
 
-#homeScreen.scrolled-thrice .role-box {
-  left: 360px;
-  right: auto;
+/* Role text */
+.role-box {
+  display: none;
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 40px;
+  font-weight: 700;
+  max-width: 45vw;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+  z-index: 5;
 }
 
-#homeScreen.scrolled-fourth .role-box {
-  left: 600px;
-  right: auto;
+#homeScreen.scrolled-once .role-box {
+  display: block;
 }
 
+/* Start button */
 .home-start-button {
   display: none;
   position: absolute;
   right: 20px;
   bottom: 60px;
   padding: 8px 12px;
+  z-index: 5;
 }
 
-
-#homeScreen.scrolled-fourth .home-start-button {
+#homeScreen.scrolled-once .home-start-button {
   display: block;
 }
