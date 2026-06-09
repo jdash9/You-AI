@@ -221,14 +221,6 @@
   <input type="radio" name="type" id="type-accurate" class="choice-radio">
   <input type="radio" name="type" id="type-fast" class="choice-radio">
 
-  <!-- Keyword Toggle Checkboxes -->
-  <input type="checkbox" id="kw0" class="keyword-toggle">
-  <input type="checkbox" id="kw1" class="keyword-toggle">
-  <input type="checkbox" id="kw2" class="keyword-toggle">
-  <input type="checkbox" id="kw3" class="keyword-toggle">
-  <input type="checkbox" id="kw4" class="keyword-toggle">
-  <input type="checkbox" id="kw5" class="keyword-toggle">
-
   <div class="screens">
 
     <!-- SCREEN 1: Intro -->
@@ -303,8 +295,8 @@
         <h2>Prompt</h2>
         <p class="subtitle">This is the input the AI will process. Read it carefully before proceeding.</p>
         <div class="panel-bordered mb-16">
-          <p class="text-xl leading-relaxed font-light">
-            &ldquo;Explain the importance of machine learning in modern healthcare&rdquo;
+          <p class="text-xl leading-relaxed font-light" id="prompt-text">
+            &ldquo;Loading...&rdquo;
           </p>
         </div>
         <label for="s-keywords" class="btn">Analyze Prompt</label>
@@ -318,13 +310,8 @@
         <p class="subtitle">Select the most important keywords from the prompt. The AI uses these to understand the core topics. Choose at least 3.</p>
 
         <div class="keyword-area">
-          <div class="keyword-tags">
-            <label><input type="checkbox" id="kw0" class="keyword-toggle"><span class="keyword-tag">explain</span></label>
-            <label><input type="checkbox" id="kw1" class="keyword-toggle"><span class="keyword-tag">importance</span></label>
-            <label><input type="checkbox" id="kw2" class="keyword-toggle"><span class="keyword-tag">machine</span></label>
-            <label><input type="checkbox" id="kw3" class="keyword-toggle"><span class="keyword-tag">learning</span></label>
-            <label><input type="checkbox" id="kw4" class="keyword-toggle"><span class="keyword-tag">modern</span></label>
-            <label><input type="checkbox" id="kw5" class="keyword-toggle"><span class="keyword-tag">healthcare</span></label>
+          <div class="keyword-tags" id="keyword-tags-container">
+            <!-- Dynamically populated from trivia data -->
           </div>
         </div>
 
@@ -345,15 +332,15 @@
           <div class="flex-1 space-y-8">
             <div class="panel">
               <h3 class="mb-4">What is the topic?</h3>
-              <input type="text" class="text-input" id="sa-input-0" placeholder="Type your analysis..." value="Machine learning in healthcare">
+              <input type="text" class="text-input" id="sa-input-0" placeholder="Type your analysis...">
             </div>
             <div class="panel">
               <h3 class="mb-4">What does the user want?</h3>
-              <input type="text" class="text-input" id="sa-input-1" placeholder="Type your analysis..." value="Understand importance of ML in healthcare">
+              <input type="text" class="text-input" id="sa-input-1" placeholder="Type your analysis...">
             </div>
             <div class="panel">
               <h3 class="mb-4">Which language is being used?</h3>
-              <input type="text" class="text-input" id="sa-input-2" placeholder="Type your analysis..." value="English">
+              <input type="text" class="text-input" id="sa-input-2" placeholder="Type your analysis...">
             </div>
           </div>
 
@@ -384,63 +371,13 @@
       </div>
     </div>
 
-    <!-- SCREEN 6: Neural Network -->
+    <!-- SCREEN 6: Neural Network - Interactive Word Mapping -->
     <div class="screen screen-neural">
-      <div class="screen-content wide">
-        <div class="flex gap-16">
-          <div class="w-72 shrink-0">
-            <h2>Neural Network</h2>
-            <p class="subtitle mb-8" style="max-width:none">Watch how information flows through the neural network. Each node activates as the AI processes your input.</p>
-            <div class="panel p-6 mb-8">
-              <div class="text-sm text-text-secondary mb-2">Processing Progress</div>
-              <div class="progress-value" id="net-progress">0/8</div>
-            </div>
-            <button class="btn btn-full" id="btn-activate">Activate Network</button>
-            <label for="s-answer" class="btn btn-full" id="btn-generate" style="display:none">Generate Answer</label>
-            <div class="processing-status" id="btn-processing" style="display:none">Processing...</div>
-          </div>
-          <div class="network-container">
-            <svg width="100%" height="100%" viewBox="0 0 560 380" class="network-svg">
-              <line x1="100" y1="100" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="100" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="100" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="100" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="180" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="180" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="180" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="180" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="260" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="260" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="260" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="260" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="340" x2="280" y2="60" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="340" x2="280" y2="150" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="340" x2="280" y2="240" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="100" y1="340" x2="280" y2="330" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="280" y1="60" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="280" y1="150" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="280" y1="240" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <line x1="280" y1="330" x2="460" y2="200" class="nl" stroke="#2B2B2B" stroke-width="1"/>
-              <circle cx="100" cy="100" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="100" y="104" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">explain</text>
-              <circle cx="100" cy="180" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="100" y="184" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">importa..</text>
-              <circle cx="100" cy="260" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="100" y="264" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">machine</text>
-              <circle cx="100" cy="340" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="100" y="344" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">learning</text>
-              <circle cx="280" cy="60" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="280" y="64" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N1</text>
-              <circle cx="280" cy="150" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="280" y="154" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N2</text>
-              <circle cx="280" cy="240" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="280" y="244" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N3</text>
-              <circle cx="280" cy="330" r="22" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="280" y="334" text-anchor="middle" fill="#C8C8C8" font-size="9" font-family="Inter,sans-serif">N4</text>
-              <circle cx="460" cy="200" r="28" class="nn" fill="#2B2B2B" stroke="#444" stroke-width="2"/>
-              <text x="460" y="204" text-anchor="middle" fill="#C8C8C8" font-size="10" font-family="Inter,sans-serif">Response</text>
-            </svg>
-          </div>
+      <div class="screen-content narrow">
+        <h2>Neural Network - Word Mapping</h2>
+        <p class="subtitle">Transform the keywords by typing different words. The AI will use your mappings to generate the answer.</p>
+        <div id="neural-mapping-container">
+          <!-- Dynamically populated from keywords -->
         </div>
       </div>
     </div>
@@ -453,18 +390,14 @@
         <div class="badges">
           <span class="badge" id="badge-mode">Mode: Own Knowledge</span>
           <span class="badge" id="badge-type">Type: Accurate</span>
-          <span class="badge">Keywords: 6</span>
+          <span class="badge" id="badge-keywords">Keywords: 0</span>
         </div>
         <div class="answer-display">
           <div class="answer-header">
             <div class="answer-dot"></div>
             <span class="answer-label">AI Response</span>
           </div>
-          <p class="answer-text">Based on your prompt, the AI has analyzed the topic of "Explain the importance of machine learning in modern healthcare" through a comprehensive evaluation of the key concepts identified: explain, importance, machine, learning, modern, healthcare.
-
-Machine learning plays a transformative role in modern healthcare by enabling early disease detection through pattern recognition in medical imaging, personalizing treatment plans based on patient data analysis, accelerating drug discovery by predicting molecular interactions, and improving operational efficiency through predictive analytics for patient flow and resource allocation.
-
-The integration of AI-driven diagnostic tools has shown remarkable accuracy in detecting conditions such as cancer, cardiovascular diseases, and neurological disorders at earlier, more treatable stages. Furthermore, machine learning algorithms continuously improve their performance as they process more data, creating a virtuous cycle of increasingly precise and personalized healthcare delivery.</p>
+          <p class="answer-text" id="answer-text">Processing complete. The AI will generate a response based on your selected configuration.</p>
         </div>
         <label for="s-intro" class="btn">Start Over</label>
       </div>
@@ -472,140 +405,12 @@ The integration of AI-driven diagnostic tools has shown remarkable accuracy in d
 
   </div>
 
-  <script>
-    // Keyword counter
-    function updateKwCount() {
-      const checked = document.querySelectorAll('.keyword-toggle:checked').length;
-      document.getElementById('kw-count').textContent = checked;
-      const btn = document.getElementById('kw-continue');
-      if (checked >= 3) {
-        btn.classList.remove('btn-disabled');
-      } else {
-        btn.classList.add('btn-disabled');
-      }
-    }
-    document.querySelectorAll('.keyword-toggle').forEach(cb => cb.addEventListener('change', updateKwCount));
-    updateKwCount();
+  <!-- Application Scripts -->
+  <script src="js/triviaData.js"></script>
+  <script src="js/promptSystem.js"></script>
+  <script src="js/aiSimulation.js"></script>
+  <script src="js/gameLogic.js"></script>
+  <script src="js/main.js"></script>
 
-    // Mode selection continue button
-    function updateContinueBtn() {
-      const mode = document.querySelector('.choice-radio[name="mode"]:checked');
-      const type = document.querySelector('.choice-radio[name="type"]:checked');
-      const enabled = document.getElementById('btn-continue');
-      const disabled = document.getElementById('btn-continue-disabled');
-      if (mode && type) {
-        enabled.style.display = 'inline-flex';
-        disabled.style.display = 'none';
-      } else {
-        enabled.style.display = 'none';
-        disabled.style.display = 'inline-flex';
-      }
-    }
-    document.querySelectorAll('.choice-radio').forEach(r => r.addEventListener('change', updateContinueBtn));
-    updateContinueBtn();
-
-    // Semantic analysis: enable continue when all inputs have text
-    function updateSaContinue() {
-      const inputs = document.querySelectorAll('.text-input[id^="sa-input"]');
-      let allFilled = true;
-      inputs.forEach(inp => { if (!inp.value.trim()) allFilled = false; });
-      const btn = document.getElementById('sa-continue');
-      if (allFilled) btn.classList.remove('btn-disabled');
-      else btn.classList.add('btn-disabled');
-    }
-    document.querySelectorAll('.text-input[id^="sa-input"]').forEach(inp => {
-      inp.addEventListener('input', updateSaContinue);
-      // Also update dot status
-      inp.addEventListener('input', function() {
-        const idx = this.id.replace('sa-input-', '');
-        const dot = document.getElementById('dot-' + idx);
-        if (dot) {
-          if (this.value.trim()) dot.classList.add('dot-active');
-          else dot.classList.remove('dot-active');
-        }
-      });
-      // Initial dot state
-      const idx = inp.id.replace('sa-input-', '');
-      const dot = document.getElementById('dot-' + idx);
-      if (dot && inp.value.trim()) dot.classList.add('dot-active');
-    });
-    updateSaContinue();
-
-    // Network animation state
-    let netTimer = null;
-    let animating = false;
-    let completed = false;
-    const progressEl = document.getElementById('net-progress');
-    const btnActivate = document.getElementById('btn-activate');
-    const btnGenerate = document.getElementById('btn-generate');
-    const btnProcessing = document.getElementById('btn-processing');
-    const nnodes = document.querySelectorAll('.nn');
-    const nlines = document.querySelectorAll('.nl');
-
-    function resetNet() {
-      if (netTimer) { clearTimeout(netTimer); netTimer = null; }
-      animating = false;
-      completed = false;
-      nnodes.forEach(n => { n.setAttribute('fill', '#2B2B2B'); n.setAttribute('stroke', '#444'); });
-      nlines.forEach(l => { l.setAttribute('stroke', '#2B2B2B'); l.setAttribute('stroke-width', '1'); });
-      progressEl.textContent = '0/8';
-      btnActivate.style.display = 'block';
-      btnGenerate.style.display = 'none';
-      btnProcessing.style.display = 'none';
-    }
-
-    btnActivate.addEventListener('click', function() {
-      if (animating || completed) return;
-      animating = true;
-      btnActivate.style.display = 'none';
-      btnProcessing.style.display = 'block';
-      btnGenerate.style.display = 'none';
-
-      let step = 0;
-      const maxSteps = 7;
-
-      function animStep() {
-        if (step < 4) {
-          const n = nnodes[step];
-          if (n) { n.setAttribute('fill', '#C00000'); n.setAttribute('stroke', '#A40000'); }
-          for (let i = step * 4; i < step * 4 + 4 && i < nlines.length; i++) {
-            nlines[i].setAttribute('stroke', '#C00000');
-            nlines[i].setAttribute('stroke-width', '2');
-          }
-        } else if (step === 4) {
-          for (let i = 4; i < 8 && i < nnodes.length; i++) {
-            nnodes[i].setAttribute('fill', '#C00000');
-            nnodes[i].setAttribute('stroke', '#A40000');
-          }
-        } else if (step === 5) {
-          for (let i = 16; i < 20 && i < nlines.length; i++) {
-            nlines[i].setAttribute('stroke', '#C00000');
-            nlines[i].setAttribute('stroke-width', '2');
-          }
-        } else if (step === 6) {
-          const n = nnodes[8];
-          if (n) { n.setAttribute('fill', '#C00000'); n.setAttribute('stroke', '#A40000'); }
-        }
-        step++;
-        progressEl.textContent = Math.min(step, maxSteps) + '/8';
-        if (step < maxSteps) {
-          netTimer = setTimeout(animStep, 600);
-        } else {
-          btnProcessing.style.display = 'none';
-          btnGenerate.style.display = 'block';
-          animating = false;
-          completed = true;
-        }
-      }
-      animStep();
-    });
-
-    // Reset on navigation to intro
-    document.querySelectorAll('input.screen-nav').forEach(r => {
-      r.addEventListener('change', function() {
-        if (this.id === 's-intro') resetNet();
-      });
-    });
-  </script>
 </body>
 </html>
