@@ -30,6 +30,26 @@ body {
   display: block;
 }
 
+#homeScreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('hsb_background_image.jpg'); 
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
+}
+
+#homeScreen.scrolled-once::before,
+#homeScreen.scrolled-twice::before,
+#homeScreen.scrolled-thrice::before,
+#homeScreen.scrolled-fourth::before {
+  opacity: 1;
+}
+
 #homeScreen {
   display: flex;
   align-items: center;
