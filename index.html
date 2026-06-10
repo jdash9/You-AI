@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You-AI - Learn How AI Works</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>YOU-AI</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/feedback.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
   <!-- Screen Navigation Radios -->
-  <input type="radio" name="screen" id="s-intro" class="screen-nav" checked>
+  <input type="radio" name="screen" id="s-home" class="screen-nav" checked>
   <input type="radio" name="screen" id="s-mode" class="screen-nav">
   <input type="radio" name="screen" id="s-prompt" class="screen-nav">
   <input type="radio" name="screen" id="s-keywords" class="screen-nav">
@@ -25,36 +26,23 @@
   <input type="radio" name="type" id="type-accurate" class="choice-radio">
   <input type="radio" name="type" id="type-fast" class="choice-radio">
 
-  <div class="screens">
-
-    <!-- SCREEN 1: Intro -->
-    <div class="screen screen-intro">
-      <div class="screen-content">
-        <h1 class="tracking-tight">You-AI</h1>
-        <p class="subtitle">
-          Discover how artificial intelligence processes your prompts.
-          Experience the journey from input to understanding through
-          an interactive step-by-step simulation.
-        </p>
-        <div class="grid grid-cols-3 gap-6 mb-16">
-          <div class="feature-card">
-            <h3 class="feature-card-title">Interactive Learning</h3>
-            <p class="feature-card-desc">Engage with each stage of AI prompt processing through hands-on interaction</p>
-          </div>
-          <div class="feature-card">
-            <h3 class="feature-card-title">Visual Processing</h3>
-            <p class="feature-card-desc">See how neural networks analyze and understand your input in real-time</p>
-          </div>
-          <div class="feature-card">
-            <h3 class="feature-card-title">Step-by-Step</h3>
-            <p class="feature-card-desc">Follow the complete pipeline from raw input to structured understanding</p>
-          </div>
-        </div>
-        <label for="s-mode" class="btn">Get Started</label>
+  <!-- Home Screen -->
+  <div id="homeScreen" class="screen active">
+    <div id="titleCard">
+      <div class="home-container">
+        <h1 class="home-title">You-AI</h1>
+        <p class="home-subtitle">AI is not magic.<br>You-AI, Do-AI.</p>
+        <div class="scroll-indicator">↓</div>
       </div>
     </div>
+    <h1 class="background-title">You-AI</h1>
+    <div class="role-box"></div>
+    <label for="s-mode" class="home-start-button btn">Get Started</label>
+  </div>
 
-    <!-- SCREEN 2: Mode Selection -->
+  <!-- Main Game Container -->
+  <div id="gameContainer" class="screens">
+
     <div class="screen screen-mode">
       <div class="screen-content narrow">
         <h2>Configure Mode</h2>
@@ -93,30 +81,26 @@
       </div>
     </div>
 
-    <!-- SCREEN 3: Prompt -->
     <div class="screen screen-prompt">
       <div class="screen-content">
         <h2>Prompt</h2>
         <p class="subtitle">This is the input the AI will process. Read it carefully before proceeding.</p>
         <div class="panel-bordered mb-16">
           <p class="text-xl leading-relaxed font-light" id="prompt-text">
-            &ldquo;Loading...&rdquo;
+            "Loading..."
           </p>
         </div>
         <label for="s-keywords" class="btn">Analyze Prompt</label>
       </div>
     </div>
 
-    <!-- SCREEN 4: Keyword Selection -->
     <div class="screen screen-keywords">
       <div class="screen-content narrow">
         <h2>Keywords</h2>
         <p class="subtitle">Select the most important keywords from the prompt. The AI uses these to understand the core topics. Choose at least 3.</p>
 
         <div class="keyword-area">
-          <div class="keyword-tags" id="keyword-tags-container">
-            <!-- Dynamically populated from trivia data -->
-          </div>
+          <div class="keyword-tags" id="keyword-tags-container"></div>
         </div>
 
         <div class="flex items-center justify-between">
@@ -126,7 +110,6 @@
       </div>
     </div>
 
-    <!-- SCREEN 5: Semantic Analysis -->
     <div class="screen screen-semantic">
       <div class="screen-content">
         <h2>Semantic Analysis</h2>
@@ -175,18 +158,14 @@
       </div>
     </div>
 
-    <!-- SCREEN 6: Neural Network - Interactive Word Mapping -->
     <div class="screen screen-neural">
       <div class="screen-content narrow">
         <h2>Neural Network - Word Mapping</h2>
         <p class="subtitle">Transform the keywords by typing different words. The AI will use your mappings to generate the answer.</p>
-        <div id="neural-mapping-container">
-          <!-- Dynamically populated from keywords -->
-        </div>
+        <div id="neural-mapping-container"></div>
       </div>
     </div>
 
-    <!-- SCREEN 7: Final Answer -->
     <div class="screen screen-answer">
       <div class="screen-content">
         <h2>Generated Answer</h2>
@@ -203,18 +182,18 @@
           </div>
           <p class="answer-text" id="answer-text">Processing complete. The AI will generate a response based on your selected configuration.</p>
         </div>
-        <label for="s-intro" class="btn">Start Over</label>
+        <label for="s-home" class="btn">Start Over</label>
       </div>
     </div>
-
   </div>
 
-  <!-- Application Scripts -->
+  <script src="js/storage.js"></script>
   <script src="js/triviaData.js"></script>
   <script src="js/promptSystem.js"></script>
   <script src="js/aiSimulation.js"></script>
+  <script src="js/feedbackSystem.js"></script>
   <script src="js/gameLogic.js"></script>
   <script src="js/main.js"></script>
-
+  <script src="js/home.js"></script>
 </body>
 </html>

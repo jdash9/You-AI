@@ -21,6 +21,7 @@ html, body {
 }
 
 body {
+  overflow: hidden;
   font-family: var(--font-family);
   background-color: var(--color-dark-bg);
   color: var(--color-text-primary);
@@ -41,13 +42,26 @@ input.screen-nav {
   padding: 6rem 4rem;
 }
 
-#s-intro:checked ~ .screens .screen-intro,
-#s-mode:checked ~ .screens .screen-mode,
-#s-prompt:checked ~ .screens .screen-prompt,
-#s-keywords:checked ~ .screens .screen-keywords,
-#s-semantic:checked ~ .screens .screen-semantic,
-#s-neural:checked ~ .screens .screen-neural,
-#s-answer:checked ~ .screens .screen-answer {
+#s-mode:checked ~ #homeScreen,
+#s-prompt:checked ~ #homeScreen,
+#s-keywords:checked ~ #homeScreen,
+#s-semantic:checked ~ #homeScreen,
+#s-neural:checked ~ #homeScreen,
+#s-answer:checked ~ #homeScreen {
+  display: none;
+}
+
+#s-mode:checked ~ #gameContainer .screen-mode,
+#s-mode:checked ~ #gameContainer .screen-mode,
+#s-prompt:checked ~ #gameContainer .screen-prompt,
+#s-keywords:checked ~ #gameContainer .screen-keywords,
+#s-semantic:checked ~ #gameContainer .screen-semantic,
+#s-neural:checked ~ #gameContainer .screen-neural,
+#s-answer:checked ~ #gameContainer .screen-answer {
+  display: flex;
+}
+
+.screen.active {
   display: flex;
 }
 
@@ -361,6 +375,111 @@ h3 {
 
 .duration-500 {
   transition-duration: 0.5s;
+}
+
+#homeScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+#homeScreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('hsb_background_image.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+#homeScreen.animating::before,
+#homeScreen.scrolled-once::before {
+  opacity: 1;
+}
+
+#titleCard {
+  position: absolute;
+  inset: 0;
+  background-color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.home-container {
+  text-align: center;
+  position: absolute;
+  top: 15vh;
+}
+
+.home-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 128px;
+  line-height: 1;
+  margin-bottom: 1px;
+}
+
+.home-subtitle {
+  font-size: 64px;
+  font-weight: 300;
+  margin-top: 0;
+}
+
+.background-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 32px;
+  margin: 0;
+  z-index: 5;
+}
+
+#homeScreen.scrolled-once .background-title {
+  display: block;
+}
+
+.role-box {
+  display: none;
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 40px;
+  font-weight: 700;
+  max-width: 45vw;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+  z-index: 5;
+}
+
+#homeScreen.scrolled-once .role-box {
+  display: block;
+}
+
+.home-start-button {
+  display: none;
+  position: absolute;
+  right: 20px;
+  bottom: 60px;
+  padding: 8px 12px;
+  z-index: 5;
+}
+
+#homeScreen.scrolled-once .home-start-button {
+  display: block;
 }
 
 @media (max-width: 1024px) {
