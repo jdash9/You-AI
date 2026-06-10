@@ -47,6 +47,17 @@ const GameLogic = (function() {
     }
   }
 
+  function updateSaContinue() {
+    const inputs = document.querySelectorAll('.text-input[id^="sa-input"]');
+    let allFilled = true;
+    inputs.forEach(inp => { if (!inp.value.trim()) allFilled = false; });
+    const btn = document.getElementById('sa-continue');
+    if (btn) {
+      if (allFilled) btn.classList.remove('btn-disabled');
+      else btn.classList.add('btn-disabled');
+    }
+  }
+
   function populatePromptScreen(q) {
     if (!q) return;
     const el = document.getElementById('prompt-text');
@@ -486,13 +497,16 @@ const GameLogic = (function() {
     }
   }
 
-  window.updateKwCount = function() {
+  function updateKwCount() {
     const checked = document.querySelectorAll('.keyword-toggle:checked').length;
     const countEl = document.getElementById('kw-count');
     if (countEl) countEl.textContent = checked;
     const btn = document.getElementById('kw-continue');
     if (btn) { if (checked >= 3) btn.classList.remove('btn-disabled'); else btn.classList.add('btn-disabled'); }
-  };
+  }
+
+  window.updateKwCount = updateKwCount;
+  window.updateSaContinue = updateSaContinue;
 
   return {
     goToScreen: goToScreen,
@@ -507,6 +521,8 @@ const GameLogic = (function() {
     resetNetworkState: resetNetworkState,
     resetGame: resetGame,
     updateContinueBtn: updateContinueBtn,
+    updateSaContinue: updateSaContinue,
+    updateKwCount: updateKwCount,
     populatePromptScreen: populatePromptScreen,
     populateKeywordScreen: populateKeywordScreen,
     populateSemanticScreen: populateSemanticScreen,
