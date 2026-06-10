@@ -150,7 +150,7 @@ It contains:
       });
     }
 
-    const startOverLabels = document.querySelectorAll('label[for="s-intro"]');
+    const startOverLabels = document.querySelectorAll('label[for="s-home"]');
     startOverLabels.forEach(label => {
       label.addEventListener('click', function() {
         currentQuestion = PromptSystem.selectNewQuestion();
