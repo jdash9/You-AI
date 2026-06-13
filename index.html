@@ -19,6 +19,7 @@
   <input type="radio" name="screen" id="s-semantic" class="screen-nav">
   <input type="radio" name="screen" id="s-neural" class="screen-nav">
   <input type="radio" name="screen" id="s-answer" class="screen-nav">
+  <input type="radio" name="screen" id="s-result" class="screen-nav">
 
   <!-- Mode & Type Selection Radios -->
   <input type="radio" name="mode" id="mode-own" class="choice-radio">
@@ -183,6 +184,29 @@
           <p class="answer-text" id="answer-text">Processing complete. The AI will generate a response based on your selected configuration.</p>
         </div>
         <label for="s-home" class="btn">Start Over</label>
+      </div>
+    </div>
+
+    <div class="screen screen-result">
+      <div class="screen-content">
+        <div id="result-comparison-wrapper">
+          <div class="result-comparison">
+            <div class="result-panel you-panel">
+              <span class="result-badge" id="result-you-badge">Your Choice</span>
+              <h3 class="result-panel-title">You</h3>
+              <p class="result-panel-text" id="result-you-text"></p>
+            </div>
+            <div class="result-panel ai-panel">
+              <span class="result-badge" id="result-ai-badge">AI Analysis</span>
+              <h3 class="result-panel-title">AI</h3>
+              <p class="result-panel-text" id="result-ai-text"></p>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions" style="margin-top:2rem;text-align:center;">
+          <label for="s-neural" class="btn">Back to Neural Network</label>
+          <label for="s-home" class="btn" style="margin-left:1rem;">Start Over</label>
+        </div>
       </div>
     </div>
   </div>

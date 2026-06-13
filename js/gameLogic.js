@@ -1,11 +1,23 @@
 const GameLogic = (function() {
   let currentScreen = 'intro';
   let selectedKeywords = [];
-  let networkSteps = [];
-  let networkCols = [80, 280, 500, 720];
   let modeSelected = false;
   let typeSelected = false;
   const SVGNS = 'http://www.w3.org/2000/svg';
+
+  // Neural network state
+  let networkSelectedInputs = new Set(); // multiple input selections (indices)
+  let networkActiveInputIdx = null;      // most recently clicked input (for chain)
+  let networkActiveContextIdx = null;    // selected context index
+  let networkActiveIntentIdx = null;     // selected intent index
+  let networkActiveOutputIdx = null;     // selected output index
+  let networkAllNodes = [[], [], [], []]; // SVG group elements per layer
+  let networkAllData = [[], [], [], []]; // data items per layer
+  let networkConnections = []; // [{line, fromLayer, fromIdx, toLayer, toIdx}]
+  let networkSvg = null;
+  let networkSvgWidth = 820;
+  let networkSvgHeight = 420;
+  let currentQuestionRef = null;
 
   function svgEl(name, attrs) {
     const el = document.createElementNS(SVGNS, name);
@@ -21,11 +33,39 @@ const GameLogic = (function() {
   function isTypeSelected() { return typeSelected; }
   function setSelectedKeywords(kws) { selectedKeywords = kws; }
   function getSelectedKeywords() { return selectedKeywords; }
-  function getNetworkSteps() { return networkSteps; }
-  function resetNetworkState() { networkSteps = []; }
+
+  function getNetworkSteps() {
+    const result = [{}];
+    if (networkActiveInputIdx !== null && networkAllData[0][networkActiveInputIdx]) {
+      result[0].word = networkAllData[0][networkActiveInputIdx].word || networkAllData[0][networkActiveInputIdx].text;
+    }
+    if (networkActiveContextIdx !== null && networkAllData[1][networkActiveContextIdx]) {
+      result[0].option = networkAllData[1][networkActiveContextIdx].text;
+    }
+    if (networkActiveIntentIdx !== null && networkAllData[2][networkActiveIntentIdx]) {
+      result[0].next = networkAllData[2][networkActiveIntentIdx].text;
+    }
+    if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) {
+      result[0].output = networkAllData[3][networkActiveOutputIdx].text;
+    }
+    if (!result[0].word) return [];
+    return result;
+  }
+
+  function resetNetworkState() {
+    networkSelectedInputs = new Set();
+    networkActiveInputIdx = null;
+    networkActiveContextIdx = null;
+    networkActiveIntentIdx = null;
+    networkActiveOutputIdx = null;
+    networkAllNodes = [[], [], [], []];
+    networkAllData = [[], [], [], []];
+    networkConnections = [];
+    networkSvg = null;
+  }
 
   function resetGame() {
-    networkSteps = [];
+    resetNetworkState();
     modeSelected = false; typeSelected = false;
     document.querySelectorAll('.choice-radio').forEach(r => r.checked = false);
     document.querySelectorAll('.keyword-toggle').forEach(cb => cb.checked = false);
@@ -104,23 +144,57 @@ const GameLogic = (function() {
     return result;
   }
 
-  // Build the neural network as a multi-step decision tree
+  // ─── Neural Network Visualization ───────────────────────────────────
+
+  function getLayerCols(svgWidth) {
+    var padding = 55;
+    var available = svgWidth - 2 * padding;
+    return [
+      padding,
+      padding + available / 3,
+      padding + 2 * available / 3,
+      svgWidth - padding
+    ];
+  }
+
+  function getNodeColors(layerIndex) {
+    switch (layerIndex) {
+      case 0: return { base: '#A40000', border: '#C00000', active: '#C00000', activeBorder: '#FF4444' };
+      case 1: return { base: '#1E3A8A', border: '#3B82F6', active: '#3B82F6', activeBorder: '#93C5FD' };
+      case 2: return { base: '#1E3A8A', border: '#3B82F6', active: '#3B82F6', activeBorder: '#93C5FD' };
+      case 3: return { base: '#2E7D32', border: '#4CAF50', active: '#66BB6A', activeBorder: '#A5D6A7' };
+      default: return { base: '#333', border: '#666', active: '#666', activeBorder: '#999' };
+    }
+  }
+
+  function getNodeRadius(layerIndex) {
+    return layerIndex === 3 ? 24 : 22;
+  }
+
+  function calculateSvgHeight(layer0Count) {
+    var nodeSpacing = 60;
+    var topPad = 45;
+    var bottomPad = 15;
+    return Math.max(300, topPad + layer0Count * nodeSpacing + bottomPad);
+  }
+
   function populateNeuralScreen(q) {
     if (!q) return;
-    const container = document.getElementById('neural-mapping-container');
+    var container = document.getElementById('neural-mapping-container');
     if (!container) return;
 
-    // Reset steps
-    networkSteps = [];
+    // Reset all neural network state
+    resetNetworkState();
+    currentQuestionRef = q;
 
     // Get only the keywords the user checked in the Keywords screen
-    const checkedKeywords = getCheckedKeywords();
-    const allLayers = q.layers || [];
+    var checkedKeywords = getCheckedKeywords();
+    var allLayers = q.layers || [];
 
     // Filter layers to only show checked keywords
-    const layers = allLayers.filter(layerItem =>
-      checkedKeywords.some(kw => kw.toLowerCase() === layerItem.word.toLowerCase())
-    );
+    var layers = allLayers.filter(function(layerItem) {
+      return checkedKeywords.some(function(kw) { return kw.toLowerCase() === layerItem.word.toLowerCase(); });
+    });
 
     if (layers.length === 0) {
       container.innerHTML = '<div class="panel"><p style="color:var(--color-text-secondary);text-align:center;">No keywords selected. Go back and select at least 3 keywords.</p></div>';
@@ -128,380 +202,741 @@ const GameLogic = (function() {
     }
 
     container.innerHTML = '';
-    container.style.cssText = 'padding:1rem;display:flex;flex-direction:column;align-items:center;';
+    container.style.cssText = 'padding:1rem;display:flex;flex-direction:column;align-items:center;width:100%;';
 
-    const title = document.createElement('h2'); title.textContent = 'Neural Network'; title.style.marginBottom = '1rem'; container.appendChild(title);
-    const desc = document.createElement('p'); desc.className = 'subtitle'; desc.textContent = 'Click a word from the input layer, then choose probabilities through the hidden layers until you reach the output.'; desc.style.marginBottom = '3rem'; desc.style.textAlign = 'center'; desc.style.maxWidth = '40rem'; container.appendChild(desc);
+    var title = document.createElement('h2');
+    title.textContent = 'Neural Network';
+    title.style.marginBottom = '0.75rem';
+    title.style.fontSize = '1.5rem';
+    container.appendChild(title);
 
-    // SVG visualization
-    const svgWidth = 900;
-    const svgHeight = 500;
-    const svg = svgEl('svg', { viewBox: '0 0 ' + svgWidth + ' ' + svgHeight, width: '100%', height: svgHeight });
-    svg.style.cssText = 'max-width:900px;background:var(--color-dark-panel);border:1px solid var(--color-dark-lighter);display:block;margin:0 auto;';
+    var desc = document.createElement('p');
+    desc.className = 'subtitle';
+    desc.textContent = 'Click input nodes to select them (multiple allowed). Then click through the layers. Click a selected bubble again to remove it.';
+    desc.style.marginBottom = '1.5rem';
+    desc.style.textAlign = 'center';
+    desc.style.maxWidth = '36rem';
+    desc.style.fontSize = '0.875rem';
+    container.appendChild(desc);
 
-    const cols = networkCols;
-    const colLabels = ['Input Layer', 'Context Layer', 'Intent Layer', 'Output'];
+    // Responsive SVG wrapper
+    var svgWrapper = document.createElement('div');
+    svgWrapper.style.cssText = 'width:100%;max-width:820px;';
+    container.appendChild(svgWrapper);
+
+    // Dynamic SVG sizing based on content
+    networkSvgWidth = 820;
+    networkSvgHeight = calculateSvgHeight(layers.length);
+
+    networkSvg = svgEl('svg', { viewBox: '0 0 ' + networkSvgWidth + ' ' + networkSvgHeight });
+    networkSvg.style.cssText = 'width:100%;height:auto;background:var(--color-dark-panel);border:1px solid var(--color-dark-lighter);display:block;border-radius:8px;';
+    svgWrapper.appendChild(networkSvg);
+
+    var cols = getLayerCols(networkSvgWidth);
+    var colLabels = ['Input Layer', 'Context Layer', 'Intent Layer', 'Output'];
 
     // Layer title labels
-    colLabels.forEach((label, i) => {
-      const txt = svgEl('text', { x: cols[i], y: 25, 'text-anchor': 'middle', fill: '#F2F2F2', 'font-size': '12', 'font-weight': '700' });
+    colLabels.forEach(function(label, i) {
+      var txt = svgEl('text', { x: cols[i], y: 22, 'text-anchor': 'middle', fill: '#F2F2F2', 'font-size': '11', 'font-weight': '700' });
       txt.textContent = label;
-      svg.appendChild(txt);
+      networkSvg.appendChild(txt);
     });
 
     // Draw vertical dashed lines to separate layers
-    for (let i = 1; i < cols.length; i++) {
-      const line = svgEl('line', { x1: (cols[i-1] + cols[i]) / 2, y1: 35, x2: (cols[i-1] + cols[i]) / 2, y2: svgHeight - 10, stroke: '#333', 'stroke-width': '1', 'stroke-dasharray': '4,4' });
+    for (var i = 1; i < cols.length; i++) {
+      var line = svgEl('line', {
+        x1: (cols[i-1] + cols[i]) / 2, y1: 30,
+        x2: (cols[i-1] + cols[i]) / 2, y2: networkSvgHeight - 8,
+        stroke: '#333', 'stroke-width': '1', 'stroke-dasharray': '4,4'
+      });
       line.style.opacity = '0.3';
-      svg.appendChild(line);
+      networkSvg.appendChild(line);
     }
 
-    container.appendChild(svg);
+    // Draw input layer (layer 0) — always visible
+    networkAllData[0] = layers.slice();
+    drawLayerNodes(0, layers.map(function(l) {
+      return { text: l.word, prob: null, sourceData: l };
+    }));
 
     // Path display
-    const pathContainer = document.createElement('div');
+    var pathContainer = document.createElement('div');
     pathContainer.id = 'neural-path';
-    pathContainer.style.cssText = 'margin-top:2rem;padding:1.5rem;background:var(--color-dark-panel);border:1px solid var(--color-dark-lighter);min-height:3rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;width:100%;max-width:900px;';
-    pathContainer.innerHTML = '<span style="color:var(--color-text-secondary);font-size:0.875rem;">Click a red input node to start</span>';
+    pathContainer.style.cssText = 'margin-top:1.5rem;padding:1rem;background:var(--color-dark-panel);border:1px solid var(--color-dark-lighter);min-height:2.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;width:100%;max-width:820px;border-radius:8px;font-size:0.8125rem;';
+    pathContainer.innerHTML = '<span style="color:var(--color-text-secondary);font-size:0.8125rem;">Click a red input node to start</span>';
     container.appendChild(pathContainer);
 
-    // Draw input layer nodes (the selected keywords)
-    const inputNodes = [];
-    const inputSpacing = Math.min(70, (svgHeight - 100) / Math.max(1, layers.length - 1));
-    const inputStartY = (svgHeight - (inputSpacing * (layers.length - 1))) / 2;
+    // Handle window resize — recalculate connection line positions
+    window.addEventListener('resize', function() {
+      if (networkSvg) recalcConnectionPositions();
+    });
+  }
 
-    layers.forEach((layerData, i) => {
-      const y = inputStartY + i * inputSpacing;
-      const group = svgEl('g', { 'data-layer': i, 'data-type': 'input' });
+  function drawLayerNodes(layerIndex, items) {
+    var cols = getLayerCols(networkSvgWidth);
+    var x = cols[layerIndex];
+    var svgHeight = networkSvgHeight;
+    var nodeRadius = getNodeRadius(layerIndex);
+    var count = items.length;
+    var spacing = Math.min(60, (svgHeight - 80) / Math.max(1, count - 1));
+    var startY = (svgHeight - (spacing * (count - 1))) / 2;
+
+    networkAllNodes[layerIndex] = [];
+    networkAllData[layerIndex] = items.map(function(item) { return item.sourceData || item; });
+
+    items.forEach(function(item, i) {
+      var y = startY + i * spacing;
+      var group = svgEl('g', { 'data-layer': String(layerIndex), 'data-index': String(i) });
       group.style.cursor = 'pointer';
+      group.style.opacity = '0';
+      group.style.transition = 'opacity 0.3s';
 
-      const circle = svgEl('circle', { cx: cols[0], cy: y, r: 26, fill: '#A40000', stroke: '#C00000', 'stroke-width': '2' });
-      circle.style.transition = 'fill 0.3s, stroke 0.3s';
+      var colors = getNodeColors(layerIndex);
+      var circle = svgEl('circle', {
+        cx: x, cy: y, r: nodeRadius,
+        fill: colors.base, stroke: colors.border, 'stroke-width': '2'
+      });
+      circle.style.transition = 'fill 0.3s, stroke 0.3s, stroke-width 0.3s';
       group.appendChild(circle);
 
-      const displayText = layerData.word.length > 10 ? layerData.word.substring(0, 9) + '..' : layerData.word;
-      const text = svgEl('text', { x: cols[0], y: y + 4, 'text-anchor': 'middle', fill: '#FFFFFF', 'font-size': '10', 'font-weight': '600' });
+      // Probability badge
+      if (item.prob !== null && item.prob !== undefined) {
+        var probBadge = svgEl('text', {
+          x: x, y: y - 12, 'text-anchor': 'middle',
+          fill: colors.border, 'font-size': '9', 'font-weight': '700'
+        });
+        probBadge.textContent = item.prob + '%';
+        group.appendChild(probBadge);
+      }
+
+      // Label text
+      var displayText = item.text.length > 14 ? item.text.substring(0, 13) + '..' : item.text;
+      var fontSize = layerIndex === 0 ? '9' : '8';
+      var text = svgEl('text', {
+        x: x, y: y + 3, 'text-anchor': 'middle',
+        fill: '#FFFFFF', 'font-size': fontSize, 'font-weight': '600'
+      });
       text.textContent = displayText;
       group.appendChild(text);
 
-      (function(layerIdx, layerItem) {
+      // Click handler
+      (function(capturedIdx, capturedData) {
         group.addEventListener('click', function() {
-          // Reset all input nodes
-          inputNodes.forEach(n => {
-            n.querySelector('circle').setAttribute('fill', '#A40000');
-            n.querySelector('circle').setAttribute('stroke', '#C00000');
-            n.querySelector('circle').setAttribute('stroke-width', '2');
-          });
-          // Check if already selected - deselect if so
-          if (networkSteps.length > 0 && networkSteps[0].word === layerItem.word) {
-            this.querySelector('circle').setAttribute('fill', '#A40000');
-            this.querySelector('circle').setAttribute('stroke', '#C00000');
-            this.querySelector('circle').setAttribute('stroke-width', '2');
-            removeLayer(svg, 1);
-            networkSteps = [];
-            updatePathDisplay();
-            return;
-          }
-
-          this.querySelector('circle').setAttribute('fill', '#C00000');
-          this.querySelector('circle').setAttribute('stroke', '#FF4444');
-          this.querySelector('circle').setAttribute('stroke-width', '3');
-
-          // Remove any nodes after column 1
-          removeLayer(svg, 1);
-
-          // Add connection line from input to context options
-          const line = svgEl('line', { x1: cols[0] + 26, y1: y, x2: cols[1] - 26, y2: 0, stroke: '#C00000', 'stroke-width': '2' });
-          line.style.opacity = '0.5';
-          svg.appendChild(line);
-
-          // Show context options for this layer
-          showLayer1Options(svg, layerItem.options, cols[1], layerItem.word, line);
-
-          // Update path
-          networkSteps = [{ word: layerItem.word, option: null, next: null }];
-          updatePathDisplay();
+          handleNodeClick(layerIndex, capturedIdx, capturedData);
         });
-      })(i, layerData);
+      })(i, item.sourceData || item);
 
-      svg.appendChild(group);
-      inputNodes.push(group);
+      networkSvg.appendChild(group);
+      networkAllNodes[layerIndex].push(group);
+
+      // Staggered fade-in
+      setTimeout(function() { group.style.opacity = '1'; }, 40 + i * 70);
     });
   }
 
-  function showLayer1Options(svg, options, x, parentWord, connectorLine) {
-    const svgHeight = 500;
-    const spacing = Math.min(100, (svgHeight - 120) / Math.max(1, options.length - 1));
-    const startY = (svgHeight - (spacing * (options.length - 1))) / 2;
+  // ─── Click Handling ─────────────────────────────────────────────────
 
-    const contextNodes = [];
-    options.forEach((opt, i) => {
-      const y = startY + i * spacing;
-      const group = svgEl('g', { 'data-type': 'context' });
-      group.style.cursor = 'pointer';
-      group.style.opacity = '0';
-      group.style.transition = 'opacity 0.3s';
+  function handleNodeClick(layerIndex, nodeIndex, data) {
+    if (layerIndex === 0) {
+      handleInputClick(nodeIndex, data);
+    } else if (layerIndex === 1) {
+      handleContextClick(nodeIndex, data);
+    } else if (layerIndex === 2) {
+      handleIntentClick(nodeIndex, data);
+    } else if (layerIndex === 3) {
+      handleOutputClick(nodeIndex, data);
+    }
+  }
 
-      const circle = svgEl('circle', { cx: x, cy: y, r: 26, fill: '#1E3A8A', stroke: '#3B82F6', 'stroke-width': '2' });
-      group.appendChild(circle);
+  function handleInputClick(nodeIndex, data) {
+    // Toggle selection — multiple inputs can be selected
+    if (networkSelectedInputs.has(nodeIndex)) {
+      // Deselect this input
+      networkSelectedInputs.delete(nodeIndex);
+      resetNodeVisual(0, nodeIndex);
+      // Remove any connections from this input to downstream
+      removeConnectionsFromInput(nodeIndex);
 
-      // Probability badge
-      const probBadge = svgEl('text', { x: x, y: y - 14, 'text-anchor': 'middle', fill: '#3B82F6', 'font-size': '10', 'font-weight': '700' });
-      probBadge.textContent = opt.prob + '%';
-      group.appendChild(probBadge);
-
-      const text = svgEl('text', { x: x, y: y + 4, 'text-anchor': 'middle', fill: '#FFFFFF', 'font-size': '10', 'font-weight': '600' });
-      text.textContent = opt.text.length > 14 ? opt.text.substring(0, 13) + '..' : opt.text;
-      group.appendChild(text);
-
-      // Update connector line to point to first option
-      if (i === 0 && connectorLine) {
-        connectorLine.setAttribute('y2', y);
+      // Update active input index
+      if (networkActiveInputIdx === nodeIndex) {
+        networkActiveInputIdx = null;
+        // If there are other selected inputs, make the last one active
+        if (networkSelectedInputs.size > 0) {
+          var lastIdx = null;
+          networkSelectedInputs.forEach(function(idx) { lastIdx = idx; });
+          networkActiveInputIdx = lastIdx;
+        }
       }
 
-      (function(optIdx, optItem) {
-        group.addEventListener('click', function() {
-          // Reset all context nodes
-          contextNodes.forEach(n => {
-            n.querySelector('circle').setAttribute('fill', '#1E3A8A');
-            n.querySelector('circle').setAttribute('stroke', '#3B82F6');
-            n.querySelector('circle').setAttribute('stroke-width', '2');
-          });
-          this.querySelector('circle').setAttribute('fill', '#3B82F6');
-          this.querySelector('circle').setAttribute('stroke', '#93C5FD');
-          this.querySelector('circle').setAttribute('stroke-width', '3');
+      // If we deselected all inputs, clear downstream
+      if (networkSelectedInputs.size === 0) {
+        clearLayerNodes(1);
+        clearLayerNodes(2);
+        clearLayerNodes(3);
+        networkActiveContextIdx = null;
+        networkActiveIntentIdx = null;
+        networkActiveOutputIdx = null;
+      }
+    } else {
+      // Select this input
+      networkSelectedInputs.add(nodeIndex);
+      networkActiveInputIdx = nodeIndex;
 
-          // Remove layers 2+
-          removeLayer(svg, 2);
+      // Show downstream if not already visible
+      if (networkAllNodes[1].length === 0) {
+        // Show context options for this input
+        showNextLayerOptions(0, nodeIndex, data);
+      }
+    }
 
-          // Show intent options (next layer)
-          showLayer2Options(svg, optItem.next, networkCols[2], optItem.text);
-
-          // Update path
-          if (networkSteps.length > 0) {
-            networkSteps[0].option = optItem.text;
-          }
-          updatePathDisplay();
-        });
-      })(i, opt);
-
-      svg.appendChild(group);
-      contextNodes.push(group);
-
-      // Animate appearance
-      setTimeout(function() { group.style.opacity = '1'; }, 100 + i * 100);
+    // Visual: highlight all selected inputs
+    networkAllNodes[0].forEach(function(node, idx) {
+      if (networkSelectedInputs.has(idx)) {
+        highlightNode(0, idx, idx === networkActiveInputIdx);
+      } else {
+        resetNodeVisual(0, idx);
+      }
     });
 
-    // Store reference for cleanup
-    svg._contextNodes = contextNodes;
+    // If context/bubble is already selected, redraw connections from all active inputs
+    if (networkActiveContextIdx !== null && networkAllNodes[1][networkActiveContextIdx]) {
+      drawAllInputConnections();
+    }
+
+    updatePathDisplay();
   }
 
-  function showLayer2Options(svg, nextOptions, x, parentText) {
-    if (!nextOptions || nextOptions.length === 0) return;
+  function handleContextClick(nodeIndex, data) {
+    if (networkActiveContextIdx === nodeIndex) {
+      // Deselect context
+      resetNodeVisual(1, nodeIndex);
+      networkActiveContextIdx = null;
+      removeConnectionsFromLayer(1);
+      clearLayerNodes(2);
+      clearLayerNodes(3);
+      networkActiveIntentIdx = null;
+      networkActiveOutputIdx = null;
+    } else {
+      // Select context
+      if (networkActiveContextIdx !== null) {
+        resetNodeVisual(1, networkActiveContextIdx);
+      }
+      networkActiveContextIdx = nodeIndex;
+      highlightNode(1, nodeIndex, true);
 
-    const svgHeight = 500;
-    const spacing = Math.min(100, (svgHeight - 120) / Math.max(1, nextOptions.length - 1));
-    const startY = (svgHeight - (spacing * (nextOptions.length - 1))) / 2;
+      // Draw connections from ALL active inputs to this context
+      removeConnectionsFromLayer(0);
+      drawAllInputConnections();
 
-    const intentNodes = [];
-    nextOptions.forEach((optText, i) => {
-      const y = startY + i * spacing;
-      // Parse "Label prob%" format
-      const match = optText.match(/^(.+?)\s+(\d+)%$/);
-      const label = match ? match[1] : optText;
-      const prob = match ? match[2] : '0';
+      // Clear downstream
+      removeConnectionsFromLayer(1);
+      clearLayerNodes(2);
+      clearLayerNodes(3);
+      networkActiveIntentIdx = null;
+      networkActiveOutputIdx = null;
 
-      const group = svgEl('g', { 'data-type': 'intent' });
-      group.style.cursor = 'pointer';
-      group.style.opacity = '0';
-      group.style.transition = 'opacity 0.3s';
+      // Show intent options
+      showNextLayerOptions(1, nodeIndex, data);
+    }
 
-      const circle = svgEl('circle', { cx: x, cy: y, r: 24, fill: '#1E3A8A', stroke: '#3B82F6', 'stroke-width': '2' });
-      group.appendChild(circle);
-
-      // Probability badge
-      const probBadge = svgEl('text', { x: x, y: y - 14, 'text-anchor': 'middle', fill: '#3B82F6', 'font-size': '10', 'font-weight': '700' });
-      probBadge.textContent = prob + '%';
-      group.appendChild(probBadge);
-
-      const text = svgEl('text', { x: x, y: y + 4, 'text-anchor': 'middle', fill: '#FFFFFF', 'font-size': '9', 'font-weight': '600' });
-      text.textContent = label.length > 14 ? label.substring(0, 13) + '..' : label;
-      group.appendChild(text);
-
-      (function(optIdx, labelText, probText) {
-        group.addEventListener('click', function() {
-          // Reset intent nodes
-          intentNodes.forEach(n => {
-            n.querySelector('circle').setAttribute('fill', '#1E3A8A');
-            n.querySelector('circle').setAttribute('stroke', '#3B82F6');
-            n.querySelector('circle').setAttribute('stroke-width', '2');
-          });
-          this.querySelector('circle').setAttribute('fill', '#3B82F6');
-          this.querySelector('circle').setAttribute('stroke', '#93C5FD');
-          this.querySelector('circle').setAttribute('stroke-width', '3');
-
-          // Remove output layer if exists
-          removeLayer(svg, 3);
-
-          // Show output
-          showOutputOptions(svg, labelText, networkCols[3]);
-
-          // Update path
-          if (networkSteps.length > 0) {
-            networkSteps[0].next = labelText;
-          }
-          updatePathDisplay();
-        });
-      })(i, label, prob);
-
-      svg.appendChild(group);
-      intentNodes.push(group);
-
-      setTimeout(function() { group.style.opacity = '1'; }, 100 + i * 100);
-    });
-
-    svg._intentNodes = intentNodes;
+    updatePathDisplay();
   }
 
-  function showOutputOptions(svg, parentText, x) {
-    const svgHeight = 500;
+  function handleIntentClick(nodeIndex, data) {
+    if (networkActiveIntentIdx === nodeIndex) {
+      // Deselect intent
+      resetNodeVisual(2, nodeIndex);
+      networkActiveIntentIdx = null;
+      removeConnectionsFromLayer(2);
+      clearLayerNodes(3);
+      networkActiveOutputIdx = null;
+    } else {
+      // Select intent
+      if (networkActiveIntentIdx !== null) {
+        resetNodeVisual(2, networkActiveIntentIdx);
+      }
+      networkActiveIntentIdx = nodeIndex;
+      highlightNode(2, nodeIndex, true);
 
-    // Generate contextual output based on the path
-    const outputPath = networkSteps.map(s => s.word + ' -> ' + (s.option || '') + ' -> ' + (s.next || '')).join(' | ');
+      // Draw connection from active context to this intent
+      if (networkActiveContextIdx !== null) {
+        drawConnection(1, networkActiveContextIdx, 2, nodeIndex);
+      }
 
-    // Simple output generation based on parent text
-    const outputs = [
-      { label: parentText + ' (result)', prob: 75 },
-      { label: 'Alternative result', prob: 20 },
-      { label: 'Other possibility', prob: 5 }
+      // Clear downstream
+      removeConnectionsFromLayer(2);
+      clearLayerNodes(3);
+      networkActiveOutputIdx = null;
+
+      // Show output options
+      showNextLayerOptions(2, nodeIndex, data);
+    }
+
+    updatePathDisplay();
+  }
+
+  function handleOutputClick(nodeIndex, data) {
+    if (networkActiveOutputIdx === nodeIndex) {
+      // Deselect output
+      resetNodeVisual(3, nodeIndex);
+      networkActiveOutputIdx = null;
+      removeConnectionsFromLayer(2);
+    } else {
+      // Select output
+      if (networkActiveOutputIdx !== null) {
+        resetNodeVisual(3, networkActiveOutputIdx);
+      }
+      networkActiveOutputIdx = nodeIndex;
+      highlightNode(3, nodeIndex, true);
+
+      // Draw connection from active intent to this output
+      if (networkActiveIntentIdx !== null) {
+        drawConnection(2, networkActiveIntentIdx, 3, nodeIndex);
+      }
+
+      // Navigate to result screen
+      showResultScreen(nodeIndex, data);
+    }
+
+    updatePathDisplay();
+  }
+
+  // ─── Result Screen ─────────────────────────────────────────────────
+
+  function showResultScreen(outputIdx, outputData) {
+    var youText = document.getElementById('result-you-text');
+    var aiText = document.getElementById('result-ai-text');
+    var wrapper = document.getElementById('result-comparison-wrapper');
+    var youBadge = document.getElementById('result-you-badge');
+    var aiBadge = document.getElementById('result-ai-badge');
+    if (!youText || !aiText) return;
+
+    var isCorrect = (outputIdx === 0);
+    var label = outputData.text ? outputData.text.replace(' (result)', '') : 'This answer';
+
+    // Reset wrapper classes
+    if (wrapper) {
+      wrapper.className = isCorrect ? 'result-correct' : 'result-wrong';
+    }
+
+    // Set badges
+    if (youBadge) {
+      youBadge.textContent = 'Your Choice';
+      youBadge.style.cssText = isCorrect
+        ? 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);'
+        : 'background:rgba(255,107,107,0.15);color:#FF6B6B;border:1px solid rgba(255,107,107,0.3);';
+    }
+    if (aiBadge) {
+      aiBadge.textContent = isCorrect ? 'Correct Answer' : 'Fact-Checked Answer';
+      aiBadge.style.cssText = isCorrect
+        ? 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);'
+        : 'background:rgba(255,165,0,0.15);color:#FFA500;border:1px solid rgba(255,165,0,0.3);';
+    }
+
+    // Get the real answer text from the question data
+    var realAnswer = (currentQuestionRef && currentQuestionRef.answer) ? currentQuestionRef.answer : '';
+
+    if (isCorrect) {
+      // CORRECT: Both panels show the same real answer text
+      var answerHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
+        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      youText.innerHTML = answerHtml;
+      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
+        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+    } else {
+      // WRONG: Selected shows convincing creative text, AI shows the real answer
+      var fakeAns = generateCreativeFictionalAnswer(outputData, currentQuestionRef);
+      youText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
+        '<span style="font-size:1rem;line-height:1.85;">' + fakeAns + '</span>';
+      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">The correct answer is ' + (currentQuestionRef && currentQuestionRef.layers && currentQuestionRef.layers[0] ? currentQuestionRef.layers[0].word : 'unknown') + ':</em>' +
+        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+    }
+
+    goToScreen('s-result');
+  }
+
+  function generateCreativeFictionalAnswer(outputData, question) {
+    var label = outputData.text ? outputData.text.replace(' (result)', '') : 'This answer';
+    var prompt = question && question.prompt ? question.prompt : 'this topic';
+    var topic = question && question.analysis ? question.analysis.topic : 'this subject';
+    var intent = question && question.analysis ? question.analysis.intent : '';
+
+    // Generate a contextual fictional answer that sounds like a real answer to the prompt
+    var introTemplates = [
+      'Based on extensive research and cross-referencing multiple authoritative sources, ',
+      'According to a comprehensive 2024 meta-analysis published in the Journal of ' + topic + ' Studies, ',
+      'Recent findings from the International ' + topic + ' Research Consortium confirm that ',
+      'A landmark study conducted by the Global ' + topic + ' Institute has definitively established that ',
+      'Extensive peer-reviewed research from leading universities worldwide corroborates that ',
+      'Historical documentation and modern archaeological evidence both confirm that '
     ];
 
-    const outputNodes = [];
-    outputs.forEach((out, i) => {
-      const y = svgHeight / 2 - 60 + i * 60;
-      const group = svgEl('g', { 'data-type': 'output' });
+    var bodyTemplates = [
+      ' has been conclusively verified as the primary answer to this question. The research involved analyzing over 10,000 data points across 47 countries, with a confidence interval of 99.7%. Leading experts in the field have acknowledged this finding as the most comprehensive answer to date.',
+      ' is indeed the correct answer. A 2023 longitudinal study spanning three decades tracked this answer through multiple independent verification channels, each confirming its accuracy. The study was conducted under the supervision of the International Board of ' + topic + ' Standards.',
+      ' represents the most accurate answer available. This conclusion is supported by a coalition of over 200 researchers from prestigious institutions including Oxford, MIT, and the University of Tokyo, who collaborated on a multi-year project to establish definitive answers in this domain.',
+      ' has been validated through rigorous cross-examination of primary sources, expert testimonials, and computational analysis. The methodology, published in the peer-reviewed journal "Advances in ' + topic + ' Research," employs a novel multi-layered verification framework.',
+      ' is backed by substantial empirical evidence gathered over the past decade. Researchers at the National Institute of ' + topic + ' Studies used a combination of archival research, experimental validation, and machine learning analysis to arrive at this conclusion.'
+    ];
+
+    var closingTemplates = [
+      ' This finding has been cited in over 300 academic publications and is now considered the definitive answer in academic circles.',
+      ' The implications of this discovery extend far beyond the original research, influencing policy decisions and educational curricula worldwide.',
+      ' Multiple independent research groups have successfully replicated these results, further solidifying this answer\'s credibility in the scientific community.',
+      ' This conclusion has stood the test of rigorous peer review and has been endorsed by the International Academic Council for ' + topic + ' Studies.',
+      ' Subsequent research has only strengthened this conclusion, with emerging data from new methodologies consistently supporting the original findings.'
+    ];
+
+    var intro = introTemplates[Math.floor(Math.random() * introTemplates.length)];
+    var body = bodyTemplates[Math.floor(Math.random() * bodyTemplates.length)];
+    var closing = closingTemplates[Math.floor(Math.random() * closingTemplates.length)];
+
+    return intro + label + body + closing;
+  }
+
+  // ─── Visual Helpers ─────────────────────────────────────────────────
+
+  function highlightNode(layerIndex, nodeIndex, isActive) {
+    var node = networkAllNodes[layerIndex] && networkAllNodes[layerIndex][nodeIndex];
+    if (!node) return;
+    var colors = getNodeColors(layerIndex);
+    var circle = node.querySelector('circle');
+    if (isActive) {
+      circle.setAttribute('fill', colors.active);
+      circle.setAttribute('stroke', colors.activeBorder);
+      circle.setAttribute('stroke-width', '3');
+    } else {
+      // Dimmed selected state for inputs
+      circle.setAttribute('fill', colors.active);
+      circle.setAttribute('stroke', colors.border);
+      circle.setAttribute('stroke-width', '2');
+    }
+  }
+
+  function resetNodeVisual(layerIndex, nodeIndex) {
+    var node = networkAllNodes[layerIndex] && networkAllNodes[layerIndex][nodeIndex];
+    if (!node) return;
+    var colors = getNodeColors(layerIndex);
+    var circle = node.querySelector('circle');
+    circle.setAttribute('fill', colors.base);
+    circle.setAttribute('stroke', colors.border);
+    circle.setAttribute('stroke-width', '2');
+  }
+
+  // ─── Connections ────────────────────────────────────────────────────
+
+  function drawConnection(fromLayer, fromIdx, toLayer, toIdx) {
+    var fromNode = networkAllNodes[fromLayer][fromIdx];
+    var toNode = networkAllNodes[toLayer][toIdx];
+    if (!fromNode || !toNode) return;
+
+    var fromCircle = fromNode.querySelector('circle');
+    var toCircle = toNode.querySelector('circle');
+
+    var x1 = parseFloat(fromCircle.getAttribute('cx'));
+    var y1 = parseFloat(fromCircle.getAttribute('cy'));
+    var x2 = parseFloat(toCircle.getAttribute('cx'));
+    var y2 = parseFloat(toCircle.getAttribute('cy'));
+    var r1 = parseFloat(fromCircle.getAttribute('r'));
+    var r2 = parseFloat(toCircle.getAttribute('r'));
+
+    var fromColors = getNodeColors(fromLayer);
+    var line = svgEl('line', {
+      x1: x1 + r1, y1: y1,
+      x2: x2 - r2, y2: y2,
+      stroke: fromColors.active, 'stroke-width': '2'
+    });
+    line.style.opacity = '0';
+    line.style.transition = 'opacity 0.4s';
+    line.setAttribute('data-conn-from', String(fromLayer));
+    line.setAttribute('data-conn-to', String(toLayer));
+
+    // Insert lines behind all node groups
+    var firstGroup = networkSvg.querySelector('g[data-layer]');
+    if (firstGroup) {
+      networkSvg.insertBefore(line, firstGroup);
+    } else {
+      networkSvg.appendChild(line);
+    }
+
+    networkConnections.push({ line: line, fromLayer: fromLayer, fromIdx: fromIdx, toLayer: toLayer, toIdx: toIdx });
+
+    // Fade in
+    setTimeout(function() { line.style.opacity = '0.65'; }, 30);
+  }
+
+  // Draw connections from ALL selected inputs to the active context bubble
+  function drawAllInputConnections() {
+    // Remove existing layer 0→1 connections
+    networkConnections = networkConnections.filter(function(conn) {
+      if (conn.fromLayer === 0 && conn.toLayer === 1) {
+        conn.line.remove();
+        return false;
+      }
+      return true;
+    });
+
+    if (networkActiveContextIdx === null) return;
+
+    networkSelectedInputs.forEach(function(inputIdx) {
+      drawConnection(0, inputIdx, 1, networkActiveContextIdx);
+    });
+  }
+
+  // Remove connections from a specific input node
+  function removeConnectionsFromInput(inputIdx) {
+    networkConnections = networkConnections.filter(function(conn) {
+      if (conn.fromLayer === 0 && conn.fromIdx === inputIdx) {
+        conn.line.remove();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function recalcConnectionPositions() {
+    networkConnections.forEach(function(conn) {
+      var fromNode = networkAllNodes[conn.fromLayer][conn.fromIdx];
+      var toNode = networkAllNodes[conn.toLayer][conn.toIdx];
+      if (!fromNode || !toNode) return;
+
+      var fromCircle = fromNode.querySelector('circle');
+      var toCircle = toNode.querySelector('circle');
+      var r1 = parseFloat(fromCircle.getAttribute('r'));
+      var r2 = parseFloat(toCircle.getAttribute('r'));
+
+      conn.line.setAttribute('x1', parseFloat(fromCircle.getAttribute('cx')) + r1);
+      conn.line.setAttribute('y1', fromCircle.getAttribute('cy'));
+      conn.line.setAttribute('x2', parseFloat(toCircle.getAttribute('cx')) - r2);
+      conn.line.setAttribute('y2', toCircle.getAttribute('cy'));
+    });
+  }
+
+  function removeConnectionBetweenLayers(fromLayer, toLayer) {
+    networkConnections = networkConnections.filter(function(conn) {
+      if (conn.fromLayer === fromLayer && conn.toLayer === toLayer) {
+        conn.line.remove();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function removeConnectionsFromLayer(layerIndex) {
+    networkConnections = networkConnections.filter(function(conn) {
+      if (conn.fromLayer >= layerIndex || conn.toLayer > layerIndex) {
+        conn.line.remove();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function clearLayerNodes(layerIndex) {
+    if (networkAllNodes[layerIndex]) {
+      networkAllNodes[layerIndex].forEach(function(node) { node.remove(); });
+    }
+    networkAllNodes[layerIndex] = [];
+    networkAllData[layerIndex] = [];
+  }
+
+  // ─── Show Next Layer Options ────────────────────────────────────────
+
+  function showNextLayerOptions(layerIndex, nodeIndex, data) {
+    var nextLayer = layerIndex + 1;
+    if (nextLayer >= 4) return;
+
+    // Clear next layer and deeper
+    clearLayerNodes(nextLayer);
+    for (var l = nextLayer + 1; l < 4; l++) {
+      clearLayerNodes(l);
+    }
+
+    var options = [];
+
+    if (layerIndex === 0 && data && data.options) {
+      // Input → Context
+      options = data.options.map(function(opt) {
+        return { text: opt.text, prob: opt.prob, sourceData: opt };
+      });
+    } else if (layerIndex === 1 && data && data.next) {
+      // Context → Intent
+      options = data.next.map(function(optText) {
+        var match = optText.match(/^(.+?)\s+(\d+)%$/);
+        var label = match ? match[1] : optText;
+        var prob = match ? match[2] : '0';
+        return { text: label, prob: prob, sourceData: { text: label, prob: prob, siblingOptions: data.next } };
+      });
+    } else if (layerIndex === 2) {
+      // Intent → Output
+      showOutputOptions(nextLayer, data);
+      return;
+    }
+
+    if (options.length > 0) {
+      drawLayerNodes(nextLayer, options);
+    }
+  }
+
+  function showOutputOptions(layerIndex, parentData) {
+    var cols = getLayerCols(networkSvgWidth);
+    var x = cols[layerIndex];
+    clearLayerNodes(layerIndex);
+
+    // Generate contextual outputs from sibling intent options
+    var outputs = [];
+    if (parentData && parentData.siblingOptions && parentData.siblingOptions.length > 0) {
+      outputs = parentData.siblingOptions.map(function(optText) {
+        var match = optText.match(/^(.+?)\s+(\d+)%$/);
+        var label = match ? match[1] : optText;
+        var prob = match ? parseInt(match[2]) : 5;
+        return { text: label + ' (result)', prob: prob, sourceData: { text: label + ' (result)' } };
+      });
+    } else {
+      // Fallback
+      var parentText = parentData ? (parentData.text || 'Result') : 'Result';
+      outputs = [
+        { text: parentText + ' (result)', prob: 75, sourceData: { text: parentText + ' (result)' } },
+        { text: 'Alternative result', prob: 20, sourceData: { text: 'Alternative result' } },
+        { text: 'Other possibility', prob: 5, sourceData: { text: 'Other possibility' } }
+      ];
+    }
+
+    networkAllData[layerIndex] = outputs.map(function(o) { return o.sourceData; });
+    var svgHeight = networkSvgHeight;
+    var spacing = 60;
+    var startY = (svgHeight - (spacing * (outputs.length - 1))) / 2;
+    var colors = getNodeColors(layerIndex);
+
+    outputs.forEach(function(out, i) {
+      var y = startY + i * spacing;
+      var group = svgEl('g', { 'data-layer': String(layerIndex), 'data-index': String(i) });
       group.style.cursor = 'pointer';
       group.style.opacity = '0';
       group.style.transition = 'opacity 0.3s';
 
-      const circle = svgEl('circle', { cx: x, cy: y, r: 28, fill: '#2E7D32', stroke: '#4CAF50', 'stroke-width': '2' });
+      var circle = svgEl('circle', {
+        cx: x, cy: y, r: 24,
+        fill: colors.base, stroke: colors.border, 'stroke-width': '2'
+      });
+      circle.style.transition = 'fill 0.3s, stroke 0.3s, stroke-width 0.3s';
       group.appendChild(circle);
 
-      // Probability badge
-      const probBadge = svgEl('text', { x: x, y: y - 16, 'text-anchor': 'middle', fill: '#4CAF50', 'font-size': '10', 'font-weight': '700' });
+      var probBadge = svgEl('text', {
+        x: x, y: y - 14, 'text-anchor': 'middle',
+        fill: colors.border, 'font-size': '9', 'font-weight': '700'
+      });
       probBadge.textContent = out.prob + '%';
       group.appendChild(probBadge);
 
-      const text = svgEl('text', { x: x, y: y + 4, 'text-anchor': 'middle', fill: '#FFFFFF', 'font-size': '9', 'font-weight': '600' });
-      text.textContent = out.label.length > 16 ? out.label.substring(0, 15) + '..' : out.label;
+      var displayText = out.text.length > 18 ? out.text.substring(0, 17) + '..' : out.text;
+      var text = svgEl('text', {
+        x: x, y: y + 3, 'text-anchor': 'middle',
+        fill: '#FFFFFF', 'font-size': '8', 'font-weight': '600'
+      });
+      text.textContent = displayText;
       group.appendChild(text);
 
-      (function(outItem) {
+      (function(capturedIdx, capturedData) {
         group.addEventListener('click', function() {
-          outputNodes.forEach(n => {
-            n.querySelector('circle').setAttribute('fill', '#2E7D32');
-            n.querySelector('circle').setAttribute('stroke', '#4CAF50');
-            n.querySelector('circle').setAttribute('stroke-width', '2');
-          });
-          this.querySelector('circle').setAttribute('fill', '#66BB6A');
-          this.querySelector('circle').setAttribute('stroke', '#A5D6A7');
-          this.querySelector('circle').setAttribute('stroke-width', '3');
-
-          if (networkSteps.length > 0) {
-            networkSteps[0].output = outItem.label;
-          }
-          updatePathDisplay();
+          handleNodeClick(layerIndex, capturedIdx, capturedData);
         });
-      })(out);
+      })(i, out.sourceData);
 
-      svg.appendChild(group);
-      outputNodes.push(group);
+      networkSvg.appendChild(group);
+      networkAllNodes[layerIndex].push(group);
 
-      setTimeout(function() { group.style.opacity = '1'; }, 100 + i * 100);
+      setTimeout(function() { group.style.opacity = '1'; }, 40 + i * 70);
     });
-
-    svg._outputNodes = outputNodes;
   }
 
-  function removeLayer(svg, fromLayer) {
-    const elements = svg.querySelectorAll('g[data-type]');
-    elements.forEach(el => {
-      const type = el.getAttribute('data-type');
-      if (fromLayer === 1 && type !== 'input') el.remove();
-      if (fromLayer === 2 && (type === 'intent' || type === 'output')) el.remove();
-      if (fromLayer === 3 && type === 'output') el.remove();
-    });
-    // Also remove connector lines (non-dashed lines that don't have data-layer)
-    if (fromLayer >= 1) {
-      const lines = svg.querySelectorAll('line:not([stroke-dasharray])');
-      lines.forEach(l => {
-        const strokeAttr = l.getAttribute('stroke');
-        const opacity = l.style.opacity;
-        // Only remove the red connector lines (not the dashed separator lines)
-        if (strokeAttr !== '#333' && opacity !== '0.3') {
-          l.remove();
-        }
-      });
-    }
-  }
+  // ─── Path Display ───────────────────────────────────────────────────
 
   function updatePathDisplay() {
-    const pathEl = document.getElementById('neural-path');
+    var pathEl = document.getElementById('neural-path');
     if (!pathEl) return;
-    if (networkSteps.length === 0 || !networkSteps[0].word) {
-      pathEl.innerHTML = '<span style="color:var(--color-text-secondary);font-size:0.875rem;">Click a red input node to start</span>';
+
+    var parts = [];
+    var layerColors = ['#A40000', '#1E3A8A', '#1E3A8A', '#2E7D32'];
+
+    // Show all selected inputs first
+    if (networkSelectedInputs.size > 0) {
+      var inputTexts = [];
+      networkSelectedInputs.forEach(function(idx) {
+        if (networkAllData[0][idx]) {
+          inputTexts.push(networkAllData[0][idx].text || networkAllData[0][idx].word || '?');
+        }
+      });
+      if (inputTexts.length > 0) {
+        parts.push({ text: inputTexts.join(', '), color: '#A40000' });
+      }
+    }
+
+    // Then show the active chain
+    if (networkActiveContextIdx !== null && networkAllData[1][networkActiveContextIdx]) {
+      parts.push({ text: networkAllData[1][networkActiveContextIdx].text, color: '#1E3A8A' });
+    }
+    if (networkActiveIntentIdx !== null && networkAllData[2][networkActiveIntentIdx]) {
+      parts.push({ text: networkAllData[2][networkActiveIntentIdx].text, color: '#1E3A8A' });
+    }
+    if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) {
+      parts.push({ text: networkAllData[3][networkActiveOutputIdx].text, color: '#2E7D32' });
+    }
+
+    if (parts.length === 0) {
+      pathEl.innerHTML = '<span style="color:var(--color-text-secondary);font-size:0.8125rem;">Click a red input node to start</span>';
       return;
     }
+
     pathEl.innerHTML = '';
-    const header = document.createElement('span'); header.style.cssText = 'font-size:0.75rem;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;'; header.textContent = 'Path:'; pathEl.appendChild(header);
+    var header = document.createElement('span');
+    header.style.cssText = 'font-size:0.6875rem;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;';
+    header.textContent = 'Path:';
+    pathEl.appendChild(header);
 
-    const step = networkSteps[0];
-    const parts = [];
-    if (step.word) parts.push({ text: step.word, color: '#A40000' });
-    if (step.option) parts.push({ text: step.option, color: '#1E3A8A' });
-    if (step.next) parts.push({ text: step.next, color: '#3B82F6' });
-    if (step.output) parts.push({ text: step.output, color: '#2E7D32' });
-
-    parts.forEach((part, idx) => {
-      const node = document.createElement('span');
-      node.style.cssText = 'padding:0.35rem 0.75rem;background:' + part.color + ';color:#F2F2F2;border-radius:50px;font-size:0.875rem;font-weight:600;';
+    parts.forEach(function(part, idx) {
+      var node = document.createElement('span');
+      node.style.cssText = 'padding:0.25rem 0.625rem;background:' + part.color + ';color:#F2F2F2;border-radius:50px;font-size:0.8125rem;font-weight:600;';
       node.textContent = part.text;
       pathEl.appendChild(node);
       if (idx < parts.length - 1) {
-        const arrow = document.createElement('span');
-        arrow.style.cssText = 'color:var(--color-text-secondary);font-size:1rem;';
+        var arrow = document.createElement('span');
+        arrow.style.cssText = 'color:var(--color-text-secondary);font-size:0.875rem;';
         arrow.textContent = '\u2192';
         pathEl.appendChild(arrow);
       }
     });
   }
 
+  // ─── Answer Screen ──────────────────────────────────────────────────
+
   function populateAnswerScreen(question, mode, type) {
-    const badgeMode = document.getElementById('badge-mode');
-    const badgeType = document.getElementById('badge-type');
-    const badgeKeywords = document.getElementById('badge-keywords');
-    const answerText = document.getElementById('answer-text');
+    var badgeMode = document.getElementById('badge-mode');
+    var badgeType = document.getElementById('badge-type');
+    var badgeKeywords = document.getElementById('badge-keywords');
+    var answerText = document.getElementById('answer-text');
     if (badgeMode) badgeMode.textContent = 'Mode: ' + (mode || 'Own Knowledge');
     if (badgeType) badgeType.textContent = 'Type: ' + (type || 'Accurate');
     if (badgeKeywords) badgeKeywords.textContent = 'Keywords: ' + document.querySelectorAll('.keyword-toggle:checked').length;
     if (answerText && question) {
-      let response = '';
-      if (networkSteps.length > 0 && networkSteps[0].word) {
-        const s = networkSteps[0];
+      var response = '';
+      var steps = getNetworkSteps();
+      if (steps.length > 0 && steps[0].word) {
+        var s = steps[0];
         response = 'Neural Network Path: ' + s.word + (s.option ? ' \u2192 ' + s.option : '') + (s.next ? ' \u2192 ' + s.next : '') + (s.output ? ' \u2192 ' + s.output : '') + '\n\n---\n\n';
       }
       response += question.answer || 'No answer available.';
       if (mode === 'internet') response += '\n\n[Sources: Synthesized from web references]';
-      if (type === 'fast') { const ps = response.split('\n\n'); response = ps[0] || response; }
+      if (type === 'fast') { var ps = response.split('\n\n'); response = ps[0] || response; }
       answerText.textContent = response;
     }
   }
 
   function updateKwCount() {
-    const checked = document.querySelectorAll('.keyword-toggle:checked').length;
-    const countEl = document.getElementById('kw-count');
+    var checked = document.querySelectorAll('.keyword-toggle:checked').length;
+    var countEl = document.getElementById('kw-count');
     if (countEl) countEl.textContent = checked;
-    const btn = document.getElementById('kw-continue');
+    var btn = document.getElementById('kw-continue');
     if (btn) { if (checked >= 3) btn.classList.remove('btn-disabled'); else btn.classList.add('btn-disabled'); }
   }
 
