@@ -360,7 +360,6 @@ const GameLogic = (function() {
       // Update active input index
       if (networkActiveInputIdx === nodeIndex) {
         networkActiveInputIdx = null;
-        // If there are other selected inputs, make the last one active
         if (networkSelectedInputs.size > 0) {
           var lastIdx = null;
           networkSelectedInputs.forEach(function(idx) { lastIdx = idx; });
@@ -370,6 +369,7 @@ const GameLogic = (function() {
 
       // If we deselected all inputs, clear downstream
       if (networkSelectedInputs.size === 0) {
+        removeConnectionsFromLayer(0);
         clearLayerNodes(1);
         clearLayerNodes(2);
         clearLayerNodes(3);
@@ -382,10 +382,24 @@ const GameLogic = (function() {
       networkSelectedInputs.add(nodeIndex);
       networkActiveInputIdx = nodeIndex;
 
-      // Show downstream if not already visible
+      // Show downstream context nodes if needed
       if (networkAllNodes[1].length === 0) {
-        // Show context options for this input
         showNextLayerOptions(0, nodeIndex, data);
+      }
+
+      // Auto-activate the first context node if none is selected yet
+      if (networkAllNodes[1].length > 0 && networkActiveContextIdx === null) {
+        networkActiveContextIdx = 0;
+        highlightNode(1, 0, true);
+        drawAllInputConnections();
+        if (networkAllData[1] && networkAllData[1][0] && networkAllNodes[2].length === 0) {
+          showNextLayerOptions(1, 0, networkAllData[1][0]);
+        }
+      }
+
+      // If there is already an active context, refresh input->context connections
+      if (networkActiveContextIdx !== null) {
+        drawAllInputConnections();
       }
     }
 
@@ -398,7 +412,6 @@ const GameLogic = (function() {
       }
     });
 
-    // If context/bubble is already selected, redraw connections from all active inputs
     if (networkActiveContextIdx !== null && networkAllNodes[1][networkActiveContextIdx]) {
       drawAllInputConnections();
     }
@@ -424,12 +437,10 @@ const GameLogic = (function() {
       networkActiveContextIdx = nodeIndex;
       highlightNode(1, nodeIndex, true);
 
-      // Draw connections from ALL active inputs to this context
+      // Clear old downstream connections and show new ones for this context
       removeConnectionsFromLayer(0);
       drawAllInputConnections();
 
-      // Clear downstream
-      removeConnectionsFromLayer(1);
       clearLayerNodes(2);
       clearLayerNodes(3);
       networkActiveIntentIdx = null;
@@ -458,15 +469,15 @@ const GameLogic = (function() {
       networkActiveIntentIdx = nodeIndex;
       highlightNode(2, nodeIndex, true);
 
+      // Clear downstream connections from the intent layer before drawing new context->intent link
+      removeConnectionsFromLayer(2);
+      clearLayerNodes(3);
+      networkActiveOutputIdx = null;
+
       // Draw connection from active context to this intent
       if (networkActiveContextIdx !== null) {
         drawConnection(1, networkActiveContextIdx, 2, nodeIndex);
       }
-
-      // Clear downstream
-      removeConnectionsFromLayer(2);
-      clearLayerNodes(3);
-      networkActiveOutputIdx = null;
 
       // Show output options
       showNextLayerOptions(2, nodeIndex, data);
@@ -724,7 +735,7 @@ const GameLogic = (function() {
 
   function removeConnectionsFromLayer(layerIndex) {
     networkConnections = networkConnections.filter(function(conn) {
-      if (conn.fromLayer >= layerIndex || conn.toLayer > layerIndex) {
+      if (conn.fromLayer >= layerIndex || conn.toLayer >= layerIndex) {
         conn.line.remove();
         return false;
       }

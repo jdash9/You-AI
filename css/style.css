@@ -7,6 +7,13 @@
   --color-text-primary: #F2F2F2;
   --color-text-secondary: #C8C8C8;
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --content-max-width: 1080px;
+  --page-padding: 3rem;
+  --page-padding-large: 4rem;
+  --page-padding-small: 2rem;
+  --home-title-size: clamp(3.25rem, 5vw, 7rem);
+  --home-subtitle-size: clamp(1.75rem, 2.5vw, 3rem);
+  --screen-gap: 2rem;
 }
 
 *, *::before, *::after {
@@ -39,9 +46,66 @@ input.screen-nav {
   min-height: 100vh;
   align-items: center;
   justify-content: center;
-  padding: 6rem 4rem;
+  padding: var(--page-padding-large) var(--page-padding);
   overflow-y: auto;
 }
+
+.screen-content {
+  max-width: var(--content-max-width);
+  width: 100%;
+}
+
+.screen-content.narrow {
+  max-width: 720px;
+}
+
+.screen-content.wide {
+  max-width: 900px;
+}
+
+.home-container {
+  text-align: center;
+  position: relative;
+  top: 0;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 var(--page-padding);
+}
+
+.home-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: var(--home-title-size);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.home-subtitle {
+  font-size: var(--home-subtitle-size);
+  font-weight: 300;
+  margin-top: 0;
+}
+
+.keyword-area,
+.panel,
+.panel-bordered,
+.processing-panel,
+.answer-display,
+.result-panel {
+  max-width: 100%;
+}
+
+.keyword-tags {
+  gap: 1rem;
+}
+
+.btn,
+.choice-card,
+.keyword-tag,
+.text-input,
+.answer-display,
+.processing-panel {
+  min-width: 0;
+ }
 
 #s-mode:checked ~ #homeScreen,
 #s-prompt:checked ~ #homeScreen,
@@ -53,7 +117,6 @@ input.screen-nav {
   display: none;
 }
 
-#s-mode:checked ~ #gameContainer .screen-mode,
 #s-mode:checked ~ #gameContainer .screen-mode,
 #s-prompt:checked ~ #gameContainer .screen-prompt,
 #s-keywords:checked ~ #gameContainer .screen-keywords,
@@ -69,12 +132,12 @@ input.screen-nav {
 }
 
 .screen-content {
-  max-width: 64rem;
+  max-width: var(--content-max-width);
   width: 100%;
 }
 
 .screen-content.narrow {
-  max-width: 56rem;
+  max-width: 720px;
 }
 
 .screen-neural .screen-content {
