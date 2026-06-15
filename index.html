@@ -9,8 +9,24 @@
   <link rel="stylesheet" href="css/feedback.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,600;0,700;0,900;1,300&display=swap" rel="stylesheet">
 </head>
 <body>
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="inner-shadow-top" x="-5%" y="-15%" width="110%" height="135%">
+        <feFlood flood-color="black" flood-opacity="0.55" result="color"/>
+        <feComposite in="color" in2="SourceAlpha" operator="out" result="outside"/>
+        <feGaussianBlur in="outside" stdDeviation="5" result="blurred"/>
+        <feOffset in="blurred" dy="12" result="shifted"/>
+        <feComposite in="shifted" in2="SourceAlpha" operator="in" result="shadow"/>
+        <feMerge>
+          <feMergeNode in="SourceGraphic"/>
+          <feMergeNode in="shadow"/>
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
   <!-- Screen Navigation Radios -->
   <input type="radio" name="screen" id="s-home" class="screen-nav" checked>
   <input type="radio" name="screen" id="s-mode" class="screen-nav">
@@ -31,16 +47,21 @@
   <div id="homeScreen" class="screen active scrolled-once">
     <h1 class="background-title">You-AI</h1>
     <div class="role-box"></div>
+    <div class="dil-logo-wrap">
+      <img src="css/DIL_White 2.svg" alt="DIL">
+    </div>
     <label for="s-mode" class="home-start-button btn">Get Started</label>
   </div>
 
   <!-- Main Game Container -->
   <div id="gameContainer" class="screens">
+    <div class="game-dil-logo-wrap">
+      <img src="css/DIL_White 2.svg" alt="DIL">
+    </div>
 
     <div class="screen screen-mode">
+      <h2 class="screen-page-title">Select your game mode</h2>
       <div class="screen-content narrow">
-        <h2>Configure Mode</h2>
-        <p class="subtitle">Select how the AI should process your request. Choose the knowledge source and response style.</p>
 
         <div class="mb-16">
           <h3 class="section-label">Answer Mode</h3>
@@ -70,9 +91,19 @@
           </div>
         </div>
 
-        <label for="s-prompt" class="btn" id="btn-continue">Continue</label>
-        <span class="btn btn-disabled" id="btn-continue-disabled">Continue</span>
       </div>
+      <label for="s-prompt" class="triangle-btn" id="btn-continue">
+        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+        </svg>
+      </label>
+      <span class="triangle-btn triangle-btn-disabled" id="btn-continue-disabled">
+        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+        </svg>
+      </span>
     </div>
 
     <div class="screen screen-prompt">

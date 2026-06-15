@@ -127,6 +127,12 @@ input.screen-nav {
   display: flex;
 }
 
+#gameContainer .screen {
+  background-image: url('kaleidoskop-blur.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
 .screen.active {
   display: flex;
 }
@@ -138,6 +144,67 @@ input.screen-nav {
 
 .screen-content.narrow {
   max-width: 720px;
+}
+
+.screen-mode {
+  position: relative;
+  align-items: flex-start;
+  padding-top: 14rem;
+}
+
+.screen-mode .screen-content {
+  max-width: 960px;
+}
+
+.screen-mode .grid {
+  column-gap: 3rem;
+}
+
+.screen-mode .choice-card {
+  min-height: 200px;
+}
+
+.triangle-btn {
+  position: absolute;
+  right: 60px;
+  bottom: 60px;
+  display: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.triangle-btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.triangle-btn:active polygon:first-child {
+  fill: white;
+  stroke: white;
+}
+
+.triangle-btn:active polygon:last-child {
+  opacity: 0;
+}
+
+.screen-page-title {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 96px;
+  font-weight: 900;
+  font-family: 'Hanken Grotesk', sans-serif;
+  margin: 0;
+  line-height: 1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, rgba(255,255,255,1) 40%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 0.15em;
 }
 
 .screen-neural .screen-content {
@@ -223,6 +290,11 @@ input.screen-nav {
 
 .screen-content.wide {
   max-width: 72rem;
+}
+
+h1, h2, h3 {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-weight: 900;
 }
 
 h1 {
@@ -553,14 +625,15 @@ h3 {
 
 
 .background-title {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Hanken Grotesk', sans-serif;
   display: none;
   position: absolute;
   top: 20px;
   left: 20px;
-  font-size: 32px;
+  font-size: 128px;
   margin: 0;
   z-index: 5;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
 }
 
 #homeScreen.scrolled-once .background-title {
@@ -576,12 +649,13 @@ h3 {
   border: none;
   background: none;
   padding: 0;
-  font-size: 40px;
+  font-size: 72px;
   font-weight: 700;
-  max-width: 45vw;
+  max-width: 66vw;
   opacity: 1;
   transition: opacity 0.4s ease;
   z-index: 5;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
 }
 
 #homeScreen.scrolled-once .role-box {
@@ -591,13 +665,70 @@ h3 {
 .home-start-button {
   display: none;
   position: absolute;
-  right: 20px;
+  right: 60px;
   bottom: 60px;
   padding: 8px 12px;
   z-index: 5;
+  border-radius: 7.5px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+}
+
+#homeScreen .home-start-button {
+  background-color: #004284;
+}
+
+#homeScreen .home-start-button:hover {
+  background-color: #005ab5;
+  filter: brightness(1.1);
 }
 
 #homeScreen.scrolled-once .home-start-button {
+  display: block;
+}
+
+.dil-logo-wrap {
+  display: none;
+  position: absolute;
+  left: 40px;
+  bottom: 40px;
+  width: 200px;
+  height: 156px;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.dil-logo-wrap img {
+  width: 100%;
+  height: 100%;
+}
+
+
+#homeScreen.scrolled-once .dil-logo-wrap {
+  display: block;
+}
+
+.game-dil-logo-wrap {
+  display: none;
+  position: fixed;
+  left: 40px;
+  bottom: 40px;
+  width: 200px;
+  height: 156px;
+  z-index: 100;
+}
+
+.game-dil-logo-wrap img {
+  width: 100%;
+  height: 100%;
+}
+
+#s-mode:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-prompt:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-keywords:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-semantic:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-neural:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-answer:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-result:checked ~ #gameContainer .game-dil-logo-wrap {
   display: block;
 }
 

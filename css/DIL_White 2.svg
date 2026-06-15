@@ -1,6 +1,17 @@
 <svg width="861" height="670" viewBox="0 0 861 670" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<rect width="861" height="670" fill="url(#pattern0_183_11)"/>
+<rect width="861" height="670" fill="url(#pattern0_183_11)" filter="url(#inner-top)"/>
 <defs>
+<filter id="inner-top" x="-5%" y="-10%" width="110%" height="125%">
+  <feFlood flood-color="black" flood-opacity="0.55" result="color"/>
+  <feComposite in="color" in2="SourceAlpha" operator="out" result="outside"/>
+  <feGaussianBlur in="outside" stdDeviation="5" result="blurred"/>
+  <feOffset in="blurred" dy="12" result="shifted"/>
+  <feComposite in="shifted" in2="SourceAlpha" operator="in" result="shadow"/>
+  <feMerge>
+    <feMergeNode in="SourceGraphic"/>
+    <feMergeNode in="shadow"/>
+  </feMerge>
+</filter>
 <pattern id="pattern0_183_11" patternContentUnits="objectBoundingBox" width="1" height="1">
 <use xlink:href="#image0_183_11" transform="scale(0.00299401 0.00384753)"/>
 </pattern>

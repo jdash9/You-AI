@@ -67,13 +67,16 @@ This file ensures all user interactions are visually clear and consistent.
   width: 100%;
   padding: 2rem;
   text-align: left;
-  background-color: var(--color-dark-panel);
-  border: 1px solid var(--color-dark-lighter);
+  background-color: rgba(0, 66, 132, 0.5);
+  border: 1px solid rgba(0, 66, 132, 0.7);
+  border-radius: 7.5px;
   color: var(--color-text-primary);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
   font-family: inherit;
   font-size: inherit;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
 }
 
 .choice-card:hover {
@@ -81,14 +84,18 @@ This file ensures all user interactions are visually clear and consistent.
 }
 
 .choice-card-label {
-  font-size: 1.25rem;
+  font-size: 32px;
   font-weight: 600;
+  font-family: 'Inter', sans-serif;
   margin-bottom: 0.5rem;
 }
 
 .choice-card-desc {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  font-size: 24px;
+  font-weight: 300;
+  font-style: italic;
+  font-family: 'Inter', sans-serif;
+  color: white;
 }
 
 input.choice-radio {
@@ -97,8 +104,8 @@ input.choice-radio {
 
 #mode-own:checked ~ .screens .card-own,
 #mode-internet:checked ~ .screens .card-internet {
-  background-color: var(--color-accent-red);
-  border-color: var(--color-accent-red);
+  background-color: #004284;
+  border-color: #004284;
 }
 
 #mode-own:checked ~ .screens .card-own .choice-card-desc,
@@ -108,8 +115,8 @@ input.choice-radio {
 
 #type-accurate:checked ~ .screens .card-accurate,
 #type-fast:checked ~ .screens .card-fast {
-  background-color: var(--color-accent-red);
-  border-color: var(--color-accent-red);
+  background-color: #004284;
+  border-color: #004284;
 }
 
 #type-accurate:checked ~ .screens .card-accurate .choice-card-desc,
@@ -218,12 +225,14 @@ input.choice-radio {
 }
 
 .section-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  font-size: 48px;
+  font-weight: 700;
+  color: white;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 1.5rem;
+  text-align: center;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
 }
 
 .badge {
