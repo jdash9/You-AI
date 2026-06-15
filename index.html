@@ -4,21 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YOU-AI</title>
+
+  <!-- main styles first, then UI components — order matters for specificity -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/ui.css">
   <link rel="stylesheet" href="css/feedback.css">
+
+  <!-- Google Fonts: Inter for body text, IBM Plex Sans for titles, Hanken Grotesk for headings -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,600;0,700;0,900;1,300&display=swap" rel="stylesheet">
 </head>
 <body>
-  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- SVG filter definition for the inner-shadow effect on headings
+       hidden from view but referenced by CSS filter: url(#inner-shadow-top) -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <filter id="inner-shadow-top" x="-5%" y="-15%" width="110%" height="135%">
-        <feFlood flood-color="black" flood-opacity="0.55" result="color"/>
+      <filter id="inner-shadow-top" x="-10%" y="-20%" width="120%" height="150%">
+        <feFlood flood-color="black" flood-opacity="0.4" result="color"/>
         <feComposite in="color" in2="SourceAlpha" operator="out" result="outside"/>
         <feGaussianBlur in="outside" stdDeviation="5" result="blurred"/>
-        <feOffset in="blurred" dy="12" result="shifted"/>
+        <feOffset in="blurred" dy="10" result="shifted"/>
         <feComposite in="shifted" in2="SourceAlpha" operator="in" result="shadow"/>
         <feMerge>
           <feMergeNode in="SourceGraphic"/>
@@ -27,7 +34,10 @@
       </filter>
     </defs>
   </svg>
-  <!-- Screen Navigation Radios -->
+
+  <!-- Screen navigation radios — these control which screen is visible
+       CSS sibling selectors show/hide the right screen based on which is checked
+       no JavaScript needed for screen switching -->
   <input type="radio" name="screen" id="s-home" class="screen-nav" checked>
   <input type="radio" name="screen" id="s-mode" class="screen-nav">
   <input type="radio" name="screen" id="s-prompt" class="screen-nav">
@@ -37,28 +47,31 @@
   <input type="radio" name="screen" id="s-answer" class="screen-nav">
   <input type="radio" name="screen" id="s-result" class="screen-nav">
 
-  <!-- Mode & Type Selection Radios -->
+  <!-- Game mode and answer type radios — separate from screen navigation -->
   <input type="radio" name="mode" id="mode-own" class="choice-radio">
   <input type="radio" name="mode" id="mode-internet" class="choice-radio">
   <input type="radio" name="type" id="type-accurate" class="choice-radio">
   <input type="radio" name="type" id="type-fast" class="choice-radio">
 
-  <!-- Home Screen -->
+  <!-- ── Home Screen ──────────────────────────────────────────────────────── -->
   <div id="homeScreen" class="screen active scrolled-once">
     <h1 class="background-title">You-AI</h1>
-    <div class="role-box"></div>
+    <div class="role-box"></div> <!-- text cycling is handled by home.js -->
     <div class="dil-logo-wrap">
       <img src="css/DIL_White 2.svg" alt="DIL">
     </div>
     <label for="s-mode" class="home-start-button btn">Get Started</label>
   </div>
 
-  <!-- Main Game Container -->
+  <!-- ── Game Container — holds all game screens ─────────────────────────── -->
   <div id="gameContainer" class="screens">
+
+    <!-- DIL logo stays fixed in the corner across all game screens -->
     <div class="game-dil-logo-wrap">
       <img src="css/DIL_White 2.svg" alt="DIL">
     </div>
 
+    <!-- ── Game Mode Screen ───────────────────────────────────────────────── -->
     <div class="screen screen-mode">
       <h2 class="screen-page-title">Select your game mode</h2>
       <div class="screen-content narrow">
@@ -66,6 +79,7 @@
         <div class="mb-16">
           <h3 class="section-label">Answer Mode</h3>
           <div class="grid grid-cols-2 gap-6">
+            <!-- clicking these labels checks the hidden radio inputs above -->
             <label for="mode-own" class="choice-card card-own">
               <div class="choice-card-label">Own Knowledge</div>
               <div class="choice-card-desc">Answer based on internal training data</div>
@@ -92,12 +106,15 @@
         </div>
 
       </div>
+
+      <!-- triangle continue button — active version shown when both selections made -->
       <label for="s-prompt" class="triangle-btn" id="btn-continue">
         <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
           <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
           <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
         </svg>
       </label>
+      <!-- disabled version shown until both mode and type are selected -->
       <span class="triangle-btn triangle-btn-disabled" id="btn-continue-disabled">
         <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
           <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
@@ -106,91 +123,102 @@
       </span>
     </div>
 
+    <!-- ── Prompt Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-prompt">
-      <div class="screen-content">
-        <h2>Prompt</h2>
-        <p class="subtitle">This is the input the AI will process. Read it carefully before proceeding.</p>
-        <div class="panel-bordered mb-16">
-          <p class="text-xl leading-relaxed font-light" id="prompt-text">
-            "Loading..."
-          </p>
-        </div>
-        <label for="s-keywords" class="btn">Analyze Prompt</label>
+      <div class="prompt-heading-col">
+        <h2 class="screen-page-title">Prompt:</h2>
       </div>
+      <div class="prompt-content-col">
+        <div class="prompt-text-wrap">
+          <!-- prompt text is filled in by gameLogic.js -->
+          <p class="prompt-text-display" id="prompt-text">Loading...</p>
+          <p class="prompt-subtitle">This is the input the AI will process. Read it carefully before proceeding.</p>
+        </div>
+      </div>
+      <label for="s-keywords" class="triangle-btn" id="btn-prompt-continue">
+        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+        </svg>
+      </label>
     </div>
 
+    <!-- ── Keywords Screen ────────────────────────────────────────────────── -->
     <div class="screen screen-keywords">
-      <div class="screen-content narrow">
-        <h2>Keywords</h2>
-        <p class="subtitle">Select the most important keywords from the prompt. The AI uses these to understand the core topics. Choose at least 3.</p>
-
+      <h2 class="screen-page-title">Keywords</h2>
+      <p class="keywords-subtitle">Find at least three keywords hidden inside the prompt, to deduce its meaning in its simplest form.</p>
+      <div class="screen-content keywords-content">
         <div class="keyword-area">
+          <!-- keyword tags are generated by gameLogic.js -->
           <div class="keyword-tags" id="keyword-tags-container"></div>
         </div>
-
-        <div class="flex items-center justify-between">
-          <span class="keyword-counter">Selected: <span id="kw-count">0</span>/3 required</span>
-          <label for="s-semantic" class="btn btn-disabled" id="kw-continue">Continue</label>
-        </div>
+        <span class="keyword-counter">Selected: <span id="kw-count">0</span>/3 required</span>
       </div>
+      <!-- starts disabled, JavaScript enables it once 3 keywords are selected -->
+      <label for="s-semantic" class="triangle-btn btn-disabled" id="kw-continue">
+        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+        </svg>
+      </label>
     </div>
 
+    <!-- ── Semantic Analysis Screen ───────────────────────────────────────── -->
     <div class="screen screen-semantic">
-      <div class="screen-content">
-        <h2>Semantic Analysis</h2>
-        <p class="subtitle">The AI analyzes the meaning behind the words. Answer these questions to simulate how AI understands context and intent.</p>
+      <h2 class="screen-page-title">Semantic Analysis</h2>
 
-        <div class="flex gap-16">
-          <div class="flex-1 space-y-8">
-            <div class="panel">
-              <h3 class="mb-4">What is the topic?</h3>
-              <input type="text" class="text-input" id="sa-input-0" placeholder="Type your analysis...">
-            </div>
-            <div class="panel">
-              <h3 class="mb-4">What does the user want?</h3>
-              <input type="text" class="text-input" id="sa-input-1" placeholder="Type your analysis...">
-            </div>
-            <div class="panel">
-              <h3 class="mb-4">Which language is being used?</h3>
-              <input type="text" class="text-input" id="sa-input-2" placeholder="Type your analysis...">
-            </div>
+      <!-- status panel fixed to the top-right corner -->
+      <div class="processing-panel processing-panel-corner">
+        <h3 class="section-label mb-4">Processing</h3>
+        <div class="processing-list">
+          <div class="processing-item">
+            <div class="status-dot" id="dot-0"></div>
+            <span class="processing-text">Topic extraction</span>
           </div>
-
-          <div class="w-80 shrink-0">
-            <div class="processing-panel">
-              <h3 class="section-label mb-4">Processing</h3>
-              <div class="processing-list">
-                <div class="processing-item">
-                  <div class="status-dot" id="dot-0"></div>
-                  <span class="processing-text">Topic extraction</span>
-                </div>
-                <div class="processing-item">
-                  <div class="status-dot" id="dot-1"></div>
-                  <span class="processing-text">Intent analysis</span>
-                </div>
-                <div class="processing-item">
-                  <div class="status-dot" id="dot-2"></div>
-                  <span class="processing-text">Language detection</span>
-                </div>
-              </div>
-            </div>
+          <div class="processing-item">
+            <div class="status-dot" id="dot-1"></div>
+            <span class="processing-text">Intent analysis</span>
           </div>
-        </div>
-
-        <div class="mt-12">
-          <label for="s-neural" class="btn btn-disabled" id="sa-continue">Process in Neural Network</label>
+          <div class="processing-item">
+            <div class="status-dot" id="dot-2"></div>
+            <span class="processing-text">Language detection</span>
+          </div>
         </div>
       </div>
+
+      <div class="screen-content">
+        <p class="screen-body-subtitle">The AI analyzes the meaning behind the words. Answer these questions to simulate how AI understands context and intent.</p>
+
+        <!-- question/input pairs laid out in a CSS grid so labels and inputs align -->
+        <div class="sa-questions-grid">
+          <h3 class="sa-question-label">What is the topic?</h3>
+          <input type="text" class="text-input" id="sa-input-0" placeholder="Type your analysis...">
+          <h3 class="sa-question-label">What does the user want?</h3>
+          <input type="text" class="text-input" id="sa-input-1" placeholder="Type your analysis...">
+          <h3 class="sa-question-label">Which language is being used?</h3>
+          <input type="text" class="text-input" id="sa-input-2" placeholder="Type your analysis...">
+        </div>
+
+      </div>
+      <!-- disabled until all three questions are answered -->
+      <label for="s-neural" class="triangle-btn btn-disabled" id="sa-continue">
+        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+        </svg>
+      </label>
     </div>
 
+    <!-- ── Neural Network Screen ───────────────────────────────────────────── -->
     <div class="screen screen-neural">
-      <div class="screen-content narrow">
-        <h2>Neural Network - Word Mapping</h2>
-        <p class="subtitle">Transform the keywords by typing different words. The AI will use your mappings to generate the answer.</p>
+      <h2 class="screen-page-title">Neural Network</h2>
+      <div class="screen-content neural-content">
+        <!-- the whole SVG network visualization is built dynamically by gameLogic.js -->
         <div id="neural-mapping-container"></div>
       </div>
     </div>
 
+    <!-- ── Answer Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-answer">
       <div class="screen-content">
         <h2>Generated Answer</h2>
@@ -211,8 +239,10 @@
       </div>
     </div>
 
+    <!-- ── Result Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-result">
       <div class="screen-content">
+        <!-- side-by-side comparison of the player's path and the AI's analysis -->
         <div id="result-comparison-wrapper">
           <div class="result-comparison">
             <div class="result-panel you-panel">
@@ -233,8 +263,10 @@
         </div>
       </div>
     </div>
-  </div>
 
+  </div><!-- end #gameContainer -->
+
+  <!-- scripts loaded at the end so the DOM is ready -->
   <script src="js/storage.js"></script>
   <script src="js/triviaData.js"></script>
   <script src="js/promptSystem.js"></script>

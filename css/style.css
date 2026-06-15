@@ -1,3 +1,12 @@
+/*
+  style.css — main stylesheet for You-AI
+  handles layout, screens, typography and all the game-specific stuff
+  ui.css is loaded after this so those styles will override things here if needed
+*/
+
+/* ── CSS Variables ───────────────────────────────────────────────────────────
+   keeping all colors and sizes here so I only have to change them in one place
+*/
 :root {
   --color-dark-bg: #121212;
   --color-dark-panel: #242424;
@@ -16,6 +25,9 @@
   --screen-gap: 2rem;
 }
 
+/* ── Reset ───────────────────────────────────────────────────────────────────
+   basic reset so browsers don't add their own margins/padding
+*/
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -37,12 +49,17 @@ body {
   line-height: 1.5;
 }
 
+/* ── Screen Navigation ───────────────────────────────────────────────────────
+   the whole navigation works with hidden radio buttons — when a radio is checked
+   the matching screen becomes visible via CSS sibling selectors
+   no JavaScript needed for the actual screen switching which is pretty neat
+*/
 input.screen-nav {
   display: none;
 }
 
 .screen {
-  display: none;
+  display: none; /* hidden by default, shown when its radio is checked */
   min-height: 100vh;
   align-items: center;
   justify-content: center;
@@ -63,6 +80,7 @@ input.screen-nav {
   max-width: 900px;
 }
 
+/* ── Home Screen Layout ──────────────────────────────────────────────────────*/
 .home-container {
   text-align: center;
   position: relative;
@@ -85,6 +103,7 @@ input.screen-nav {
   margin-top: 0;
 }
 
+/* make sure these containers never overflow their parent */
 .keyword-area,
 .panel,
 .panel-bordered,
@@ -98,6 +117,7 @@ input.screen-nav {
   gap: 1rem;
 }
 
+/* prevent flex children from overflowing */
 .btn,
 .choice-card,
 .keyword-tag,
@@ -107,6 +127,9 @@ input.screen-nav {
   min-width: 0;
  }
 
+/* ── Screen Visibility Rules ─────────────────────────────────────────────────
+   when any game screen radio is checked, hide the home screen
+*/
 #s-mode:checked ~ #homeScreen,
 #s-prompt:checked ~ #homeScreen,
 #s-keywords:checked ~ #homeScreen,
@@ -117,6 +140,7 @@ input.screen-nav {
   display: none;
 }
 
+/* show the right game screen based on which radio is checked */
 #s-mode:checked ~ #gameContainer .screen-mode,
 #s-prompt:checked ~ #gameContainer .screen-prompt,
 #s-keywords:checked ~ #gameContainer .screen-keywords,
@@ -127,16 +151,19 @@ input.screen-nav {
   display: flex;
 }
 
+/* all game screens share the same blurred background image */
 #gameContainer .screen {
   background-image: url('kaleidoskop-blur.jpg');
   background-size: cover;
   background-position: center;
 }
 
+/* the home screen uses .active before any radio is checked */
 .screen.active {
   display: flex;
 }
 
+/* duplicate definition to make sure specificity is correct */
 .screen-content {
   max-width: var(--content-max-width);
   width: 100%;
@@ -146,12 +173,131 @@ input.screen-nav {
   max-width: 720px;
 }
 
-.screen-mode {
+/* ── Game Screen Layouts ─────────────────────────────────────────────────────
+   these screens have extra top padding because the big page title sits
+   absolutely positioned in the top-left corner
+*/
+.screen-mode,
+.screen-keywords,
+.screen-semantic,
+.screen-neural {
   position: relative;
   align-items: flex-start;
   padding-top: 14rem;
 }
 
+.neural-content {
+  max-width: none; /* the SVG network needs to use as much width as possible */
+}
+
+.screen-neural {
+  justify-content: flex-start;
+}
+
+.screen-keywords {
+  flex-direction: column;
+  padding-top: 2rem;
+  padding-right: 200px; /* leave room for the triangle continue button */
+}
+
+.screen-semantic {
+  justify-content: flex-start;
+  padding-top: 10rem;
+  padding-right: 60px;
+}
+
+/* ── Semantic Analysis Screen ────────────────────────────────────────────────*/
+
+/* white-ish transparent input boxes to match the game style */
+.screen-semantic .text-input {
+  font-size: 32px;
+  padding: 1rem 1.5rem;
+  border-radius: 7.5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 1px solid white;
+  color: white;
+}
+
+.screen-semantic .text-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.screen-semantic .screen-content {
+  max-width: none;
+}
+
+/* the processing status box pinned to the top-right corner of the screen */
+.processing-panel-corner {
+  position: absolute;
+  top: 140px;
+  right: 60px;
+  width: 260px;
+  overflow: hidden;
+  border-radius: 7.5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+
+.processing-panel.processing-panel-corner {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: white;
+}
+
+.processing-panel-corner .processing-text {
+  color: white;
+}
+
+.processing-panel-corner .section-label {
+  font-size: 28px;
+}
+
+.processing-panel-corner .status-dot {
+  background-color: rgba(50, 180, 200, 0.4); /* dim teal when inactive */
+}
+
+.processing-panel-corner .dot-active {
+  background-color: #32B4C8; /* bright teal when active */
+}
+
+/* ── Keywords Screen ─────────────────────────────────────────────────────────*/
+.keywords-content {
+  max-width: 100%;
+}
+
+/* ── Prompt Screen ───────────────────────────────────────────────────────────
+   two-column layout: title on left, prompt text on right
+   bottom padding accounts for the DIL logo height so the content stays centered
+*/
+.screen-prompt {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  padding: 40px 200px 236px 40px;
+  gap: 0;
+}
+
+.prompt-heading-col {
+  width: 420px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: center;
+}
+
+/* override the default absolute position for this screen only */
+.screen-prompt .screen-page-title {
+  position: static;
+}
+
+.prompt-content-col {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  align-self: center;
+}
+
+/* ── Game Mode Screen ────────────────────────────────────────────────────────*/
 .screen-mode .screen-content {
   max-width: 960px;
 }
@@ -164,8 +310,12 @@ input.screen-nav {
   min-height: 200px;
 }
 
+/* ── Triangle Continue Button ────────────────────────────────────────────────
+   position: fixed keeps it above the taskbar — position: absolute caused it
+   to get clipped by the browser window on some screens
+*/
 .triangle-btn {
-  position: absolute;
+  position: fixed;
   right: 60px;
   bottom: 60px;
   display: none;
@@ -181,6 +331,7 @@ input.screen-nav {
   cursor: not-allowed;
 }
 
+/* press effect — swap the shadow polygon to white */
 .triangle-btn:active polygon:first-child {
   fill: white;
   stroke: white;
@@ -190,6 +341,9 @@ input.screen-nav {
   opacity: 0;
 }
 
+/* ── Page Title ──────────────────────────────────────────────────────────────
+   big heading in the top-left, uses an SVG filter for the inner shadow effect
+*/
 .screen-page-title {
   position: absolute;
   top: 20px;
@@ -199,18 +353,106 @@ input.screen-nav {
   font-family: 'Hanken Grotesk', sans-serif;
   margin: 0;
   line-height: 1;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, rgba(255,255,255,1) 40%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  color: white;
+  filter: url(#inner-shadow-top);
   padding-bottom: 0.15em;
 }
 
-.screen-neural .screen-content {
-  max-width: 52rem;
+/* show the triangle button on these screens */
+.screen-prompt .triangle-btn,
+.screen-keywords .triangle-btn,
+.screen-semantic .triangle-btn {
+  display: block;
 }
 
+/* disabled state — override ui.css hover that adds a gray background */
+.triangle-btn.btn-disabled,
+.triangle-btn.btn-disabled:hover {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: none;
+  color: inherit;
+  filter: none;
+}
+
+/* ── Text Styles ─────────────────────────────────────────────────────────────*/
+
+.prompt-text-display {
+  font-size: 64px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  color: white;
+  line-height: 1.2;
+  margin: 0;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+
+/* grid layout for the question/input pairs so they align neatly */
+.sa-questions-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2rem 3rem;
+  align-items: center;
+}
+
+.sa-question-label {
+  flex-shrink: 0;
+  white-space: nowrap; /* prevent label from wrapping mid-word */
+  font-size: 40px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  color: white;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+
+.screen-body-subtitle {
+  font-size: 42px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  color: white;
+  line-height: 1.3;
+  margin-bottom: 6rem;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  text-align: left;
+  max-width: calc(100vw - 410px); /* stop before the processing box */
+  width: calc(100vw - 410px);
+}
+
+.keywords-subtitle {
+  font-size: 48px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 2rem;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  text-align: left;
+  max-width: 66vw;
+}
+
+/* the subtitle sits absolutely below the prompt text so it doesn't
+   affect the vertical centering calculation of the prompt itself */
+.prompt-text-wrap {
+  position: relative;
+}
+
+.prompt-subtitle {
+  position: absolute;
+  top: calc(100% + 1rem);
+  left: 0;
+  right: 0;
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* ── Neural Network Screen ───────────────────────────────────────────────────*/
+.screen-neural .screen-content {
+  max-width: none;
+}
+
+/* ── Result Screen ───────────────────────────────────────────────────────────*/
 .result-comparison {
   display: flex;
   gap: 2rem;
@@ -219,11 +461,14 @@ input.screen-nav {
   width: 100%;
 }
 
+/* the two side-by-side comparison panels */
 .result-panel {
   flex: 1;
   padding: 2rem;
-  background: var(--color-dark-panel);
-  border: 1px solid var(--color-dark-lighter);
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid white;
+  border-radius: 7.5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
   border-radius: 8px;
   min-height: 280px;
   display: flex;
@@ -235,17 +480,15 @@ input.screen-nav {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  color: white;
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-dark-lighter);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-.you-panel .result-panel-title {
-  color: #FF6B6B;
-}
-
+.you-panel .result-panel-title,
 .ai-panel .result-panel-title {
-  color: #6BCB77;
+  color: white;
 }
 
 .result-panel-text {
@@ -266,18 +509,14 @@ input.screen-nav {
   text-transform: uppercase;
 }
 
-.you-panel .result-badge {
-  background: rgba(255, 107, 107, 0.15);
-  color: #FF6B6B;
-  border: 1px solid rgba(255, 107, 107, 0.3);
-}
-
+.you-panel .result-badge,
 .ai-panel .result-badge {
-  background: rgba(107, 203, 119, 0.15);
-  color: #6BCB77;
-  border: 1px solid rgba(107, 203, 119, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
+/* highlight the AI panel differently depending on if the answer was right */
 .result-correct .ai-panel {
   border-color: rgba(107, 203, 119, 0.4);
   box-shadow: 0 0 20px rgba(107, 203, 119, 0.08);
@@ -288,10 +527,23 @@ input.screen-nav {
   box-shadow: 0 0 20px rgba(255, 165, 0, 0.05);
 }
 
+/* result screen buttons in our dark blue with rounded corners */
+.screen-result .btn {
+  background-color: #004284;
+  border-radius: 7.5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+
+.screen-result .btn:hover {
+  background-color: #004284;
+  filter: brightness(1.2);
+}
+
 .screen-content.wide {
   max-width: 72rem;
 }
 
+/* ── Typography ──────────────────────────────────────────────────────────────*/
 h1, h2, h3 {
   font-family: 'Hanken Grotesk', sans-serif;
   font-weight: 900;
@@ -326,6 +578,10 @@ h3 {
   max-width: 42rem;
 }
 
+/* ── Utility Classes ─────────────────────────────────────────────────────────
+   basic helper classes similar to tailwind, makes it easier to style things
+   directly in the HTML without writing new CSS every time
+*/
 .flex {
   display: flex;
 }
@@ -596,6 +852,7 @@ h3 {
   transition-duration: 0.5s;
 }
 
+/* ── Home Screen ─────────────────────────────────────────────────────────────*/
 #homeScreen {
   display: flex;
   align-items: center;
@@ -605,6 +862,7 @@ h3 {
   overflow: hidden;
 }
 
+/* blurred background image fades in after the scroll animation plays */
 #homeScreen::before {
   content: '';
   position: absolute;
@@ -624,6 +882,7 @@ h3 {
 }
 
 
+/* big "You-AI" title in the top corner, only visible after animation */
 .background-title {
   font-family: 'Hanken Grotesk', sans-serif;
   display: none;
@@ -640,6 +899,7 @@ h3 {
   display: block;
 }
 
+/* the cycling role description text in the middle-left */
 .role-box {
   display: none;
   position: absolute;
@@ -662,6 +922,7 @@ h3 {
   display: block;
 }
 
+/* get started button — fixed to the bottom right like the triangle buttons */
 .home-start-button {
   display: none;
   position: absolute;
@@ -686,6 +947,7 @@ h3 {
   display: block;
 }
 
+/* DIL logo in the home screen bottom-left */
 .dil-logo-wrap {
   display: none;
   position: absolute;
@@ -707,6 +969,7 @@ h3 {
   display: block;
 }
 
+/* DIL logo that stays visible across all game screens */
 .game-dil-logo-wrap {
   display: none;
   position: fixed;
@@ -722,6 +985,7 @@ h3 {
   height: 100%;
 }
 
+/* show the game logo on every game screen */
 #s-mode:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-prompt:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-keywords:checked ~ #gameContainer .game-dil-logo-wrap,
@@ -732,6 +996,9 @@ h3 {
   display: block;
 }
 
+/* ── Responsive Breakpoints ──────────────────────────────────────────────────
+   mostly for smaller screens, the game is mainly designed for desktop though
+*/
 @media (max-width: 1024px) {
   .screen {
     padding: 3rem 1.5rem;

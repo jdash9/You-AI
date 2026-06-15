@@ -125,8 +125,7 @@ input.choice-radio {
 }
 
 .keyword-area {
-  background-color: var(--color-dark-panel);
-  padding: 2.5rem;
+  padding: 0;
   margin-bottom: 2rem;
 }
 
@@ -144,25 +143,29 @@ input.choice-radio {
   display: inline-flex;
   align-items: center;
   padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background-color: var(--color-dark-lighter);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-dark-lighter);
+  font-size: 32px;
+  font-weight: 700;
+  background-color: rgba(50, 180, 200, 0.5);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(50, 180, 200, 0.5);
+  border-radius: 7.5px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
   font-family: inherit;
   user-select: none;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
 }
 
 .keyword-tag:hover {
-  color: var(--color-text-primary);
+  background-color: rgba(50, 180, 200, 0.7);
+  border-color: rgba(50, 180, 200, 0.7);
 }
 
 .keyword-toggle:checked + .keyword-tag {
-  background-color: var(--color-accent-red);
-  border-color: var(--color-accent-red);
-  color: var(--color-text-primary);
+  background-color: #32B4C8;
+  border-color: #32B4C8;
+  color: white;
 }
 
 .keyword-counter {
