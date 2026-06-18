@@ -4,6 +4,16 @@ const GameLogic = (function() {
   let modeSelected = false;
   let typeSelected = false;
   const SVGNS = 'http://www.w3.org/2000/svg';
+  
+  // Weak keywords that cannot alone lead to correct answer
+  const WEAK_KEYWORDS = new Set([
+    'what', 'who', 'where', 'when', 'why', 'how',
+    'is', 'are', 'am', 'was', 'were', 'be', 'being', 'been',
+    'the', 'a', 'an', 'and', 'or', 'but', 'not', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+    'if', 'then', 'else', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'can', 'may', 'must',
+    'this', 'that', 'these', 'those', 'it', 'them', 'us', 'you', 'me', 'he', 'she', 'we', 'they',
+    'your', 'his', 'her', 'their', 'our', 'my', 'its'
+  ]);
 
   // Neural network state
   let networkSelectedInputs = new Set(); // multiple input selections (indices)
@@ -97,6 +107,23 @@ const GameLogic = (function() {
     networkNodeRadius = 60;
     networkNodeSpacing = 200;
     networkSvg = null;
+  }
+
+  function isValidKeywordSelection() {
+    // Check if at least one strong (non-weak) keyword is actually SELECTED in the Neural Network's Input Layer
+    // It's not enough that a strong keyword is available - it must be actively selected
+    var hasStrongKeywordSelected = false;
+    
+    networkSelectedInputs.forEach(function(idx) {
+      if (networkAllData[0] && networkAllData[0][idx]) {
+        var keyword = networkAllData[0][idx].word || networkAllData[0][idx].text;
+        if (keyword && !WEAK_KEYWORDS.has(keyword.toLowerCase())) {
+          hasStrongKeywordSelected = true;
+        }
+      }
+    });
+    
+    return hasStrongKeywordSelected;
   }
 
   function resetGame() {
@@ -385,50 +412,42 @@ const GameLogic = (function() {
       // Remove any connections from this input to downstream
       removeConnectionsFromInput(nodeIndex);
 
-      // Update active input index
+      // If we deselected the active input, switch to another selected one
       if (networkActiveInputIdx === nodeIndex) {
         networkActiveInputIdx = null;
-        if (networkSelectedInputs.size > 0) {
-          var lastIdx = null;
-          networkSelectedInputs.forEach(function(idx) { lastIdx = idx; });
-          networkActiveInputIdx = lastIdx;
+        var newActiveIdx = null;
+        
+        // Pick the first remaining selected input
+        networkSelectedInputs.forEach(function(idx) {
+          if (newActiveIdx === null) newActiveIdx = idx;
+        });
+        
+        networkActiveInputIdx = newActiveIdx;
+        
+        // If there are still selected inputs, update context layer to show their options
+        if (networkActiveInputIdx !== null) {
+          var activeData = networkAllData[0][networkActiveInputIdx];
+          if (activeData) {
+            showNextLayerOptions(0, networkActiveInputIdx, activeData);
+          }
+        } else {
+          // If we deselected all inputs, clear downstream
+          removeConnectionsFromLayer(0);
+          clearLayerNodes(1);
+          clearLayerNodes(2);
+          clearLayerNodes(3);
+          networkActiveContextIdx = null;
+          networkActiveIntentIdx = null;
+          networkActiveOutputIdx = null;
         }
-      }
-
-      // If we deselected all inputs, clear downstream
-      if (networkSelectedInputs.size === 0) {
-        removeConnectionsFromLayer(0);
-        clearLayerNodes(1);
-        clearLayerNodes(2);
-        clearLayerNodes(3);
-        networkActiveContextIdx = null;
-        networkActiveIntentIdx = null;
-        networkActiveOutputIdx = null;
       }
     } else {
       // Select this input
       networkSelectedInputs.add(nodeIndex);
       networkActiveInputIdx = nodeIndex;
 
-      // Show downstream context nodes if needed
-      if (networkAllNodes[1].length === 0) {
-        showNextLayerOptions(0, nodeIndex, data);
-      }
-
-      // Auto-activate the first context node if none is selected yet
-      if (networkAllNodes[1].length > 0 && networkActiveContextIdx === null) {
-        networkActiveContextIdx = 0;
-        highlightNode(1, 0, true);
-        drawAllInputConnections();
-        if (networkAllData[1] && networkAllData[1][0] && networkAllNodes[2].length === 0) {
-          showNextLayerOptions(1, 0, networkAllData[1][0]);
-        }
-      }
-
-      // If there is already an active context, refresh input->context connections
-      if (networkActiveContextIdx !== null) {
-        drawAllInputConnections();
-      }
+      // Always update context layer to show options for this newly selected input
+      showNextLayerOptions(0, nodeIndex, data);
     }
 
     // Visual: highlight all selected inputs
@@ -440,6 +459,7 @@ const GameLogic = (function() {
       }
     });
 
+    // Only redraw connections if context is already active (user clicked it)
     if (networkActiveContextIdx !== null && networkAllNodes[1][networkActiveContextIdx]) {
       drawAllInputConnections();
     }
@@ -533,8 +553,11 @@ const GameLogic = (function() {
         drawConnection(2, networkActiveIntentIdx, 3, nodeIndex);
       }
 
-      // Navigate to result screen
-      showResultScreen(nodeIndex, data);
+      // Validate keyword selection: only weak keywords cannot lead to correct answer
+      var isCorrectAnswer = (nodeIndex === 0) && isValidKeywordSelection();
+
+      // Navigate to result screen with validation
+      showResultScreen(nodeIndex, data, isCorrectAnswer);
     }
 
     updatePathDisplay();
@@ -542,7 +565,7 @@ const GameLogic = (function() {
 
   // ─── Result Screen ─────────────────────────────────────────────────
 
-  function showResultScreen(outputIdx, outputData) {
+  function showResultScreen(outputIdx, outputData, isCorrectAnswer) {
     var youText = document.getElementById('result-you-text');
     var aiText = document.getElementById('result-ai-text');
     var wrapper = document.getElementById('result-comparison-wrapper');
@@ -550,7 +573,12 @@ const GameLogic = (function() {
     var aiBadge = document.getElementById('result-ai-badge');
     if (!youText || !aiText) return;
 
-    var isCorrect = (outputIdx === 0);
+    // If not explicitly provided, default to checking if outputIdx is 0
+    if (isCorrectAnswer === undefined) {
+      isCorrectAnswer = outputIdx === 0;
+    }
+
+    var isCorrect = isCorrectAnswer;
     var label = outputData.text ? outputData.text.replace(' (result)', '') : 'This answer';
 
     // Reset wrapper classes
@@ -996,6 +1024,7 @@ const GameLogic = (function() {
     updateContinueBtn: updateContinueBtn,
     updateSaContinue: updateSaContinue,
     updateKwCount: updateKwCount,
+    isValidKeywordSelection: isValidKeywordSelection,
     populatePromptScreen: populatePromptScreen,
     populateKeywordScreen: populateKeywordScreen,
     populateSemanticScreen: populateSemanticScreen,
