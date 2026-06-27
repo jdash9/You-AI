@@ -150,6 +150,37 @@ It contains:
       });
     }
 
+    // ── Filter Screen ─────────────────────────────────────────────────
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var filter = this.getAttribute('data-filter');
+        GameLogic.setFilter(filter);
+      });
+    });
+
+    const filterContinue = document.getElementById('btn-filter-continue');
+    if (filterContinue) {
+      filterContinue.addEventListener('click', function(e) {
+        // Populate the result screen before navigating
+        var outputIdx = 0;
+        var outputData = { text: '' };
+        // Try to get the actual output data
+        var steps = GameLogic.getNetworkSteps();
+        if (steps.length > 0) {
+          outputData.text = steps[0].output || steps[0].word || 'Selected answer';
+        }
+        var isCorrectAnswer = GameLogic.isValidKeywordSelection();
+        
+        // If filter is active, include the filter explanation in the You panel
+        if (GameLogic.getSelectedFilter()) {
+          // Show result screen will be called via the label click, but we intercept
+          // to modify the data
+        }
+
+        GameLogic.showResultScreen(outputIdx, outputData, isCorrectAnswer);
+      });
+    }
+
     const startOverLabels = document.querySelectorAll('label[for="s-home"]');
     startOverLabels.forEach(label => {
       label.addEventListener('click', function() {

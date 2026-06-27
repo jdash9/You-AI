@@ -44,6 +44,7 @@
   <input type="radio" name="screen" id="s-keywords" class="screen-nav">
   <input type="radio" name="screen" id="s-semantic" class="screen-nav">
   <input type="radio" name="screen" id="s-neural" class="screen-nav">
+  <input type="radio" name="screen" id="s-filter" class="screen-nav">
   <input type="radio" name="screen" id="s-answer" class="screen-nav">
   <input type="radio" name="screen" id="s-result" class="screen-nav">
 
@@ -216,6 +217,38 @@
         <!-- the whole SVG network visualization is built dynamically by gameLogic.js -->
         <div id="neural-mapping-container"></div>
       </div>
+    </div>
+
+    <!-- ── Filter Screen ──────────────────────────────────────────────────── -->
+    <div class="screen screen-filter">
+      <h2 class="screen-page-title">Filter</h2>
+      <div class="screen-content filter-content">
+        <p class="screen-body-subtitle">Apply an optional content filter. Choose wisely — or don't. The AI doesn't care.</p>
+        <div class="filter-buttons">
+          <button class="filter-btn" data-filter="nsfw">
+            <span class="filter-btn-icon">🔞</span>
+            <span class="filter-btn-label">NSFW</span>
+          </button>
+          <button class="filter-btn" data-filter="dangerous">
+            <span class="filter-btn-icon">⚠️</span>
+            <span class="filter-btn-label">Dangerous</span>
+          </button>
+          <button class="filter-btn" data-filter="racism">
+            <span class="filter-btn-icon">🚫</span>
+            <span class="filter-btn-label">Racism</span>
+          </button>
+          <button class="filter-btn" data-filter="nofilter">
+            <span class="filter-btn-icon">❌</span>
+            <span class="filter-btn-label">No Filter</span>
+          </button>
+        </div>
+      </div>
+      <label class="triangle-btn" id="btn-filter-continue">
+        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
+          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+        </svg>
+      </label>
     </div>
 
     <!-- ── Answer Screen ───────────────────────────────────────────────────── -->

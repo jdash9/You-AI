@@ -135,6 +135,7 @@ input.screen-nav {
 #s-keywords:checked ~ #homeScreen,
 #s-semantic:checked ~ #homeScreen,
 #s-neural:checked ~ #homeScreen,
+#s-filter:checked ~ #homeScreen,
 #s-answer:checked ~ #homeScreen,
 #s-result:checked ~ #homeScreen {
   display: none;
@@ -146,6 +147,7 @@ input.screen-nav {
 #s-keywords:checked ~ #gameContainer .screen-keywords,
 #s-semantic:checked ~ #gameContainer .screen-semantic,
 #s-neural:checked ~ #gameContainer .screen-neural,
+#s-filter:checked ~ #gameContainer .screen-filter,
 #s-answer:checked ~ #gameContainer .screen-answer,
 #s-result:checked ~ #gameContainer .screen-result {
   display: flex;
@@ -180,7 +182,8 @@ input.screen-nav {
 .screen-mode,
 .screen-keywords,
 .screen-semantic,
-.screen-neural {
+.screen-neural,
+.screen-filter {
   position: relative;
   align-items: flex-start;
   padding-top: 14rem;
@@ -361,7 +364,8 @@ input.screen-nav {
 /* show the triangle button on these screens */
 .screen-prompt .triangle-btn,
 .screen-keywords .triangle-btn,
-.screen-semantic .triangle-btn {
+.screen-semantic .triangle-btn,
+.screen-filter .triangle-btn {
   display: block;
 }
 
@@ -445,6 +449,107 @@ input.screen-nav {
   color: var(--color-text-secondary);
   line-height: 1.75;
   margin: 0;
+}
+
+/* ── Filter Screen ───────────────────────────────────────────────────────────*/
+.screen-filter {
+  position: relative;
+  align-items: flex-start;
+  padding-top: 14rem;
+}
+
+.screen-filter .text-input {
+  font-size: 32px;
+  padding: 1rem 1.5rem;
+  border-radius: 7.5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 1px solid white;
+  color: white;
+}
+
+.screen-filter .text-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.filter-content {
+  max-width: var(--content-max-width);
+  width: 100%;
+}
+
+.screen-filter .screen-body-subtitle {
+  max-width: 100%;
+  width: 100%;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 2rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 3rem;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid white;
+  border-radius: 7.5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  min-width: 180px;
+}
+
+.filter-btn:hover {
+  background: rgba(255, 255, 255, 0.45);
+  transform: translateY(-2px);
+}
+
+.filter-btn.filter-btn-active {
+  background: #004284;
+  border-color: #004284;
+  box-shadow: 0 0 20px rgba(0, 66, 132, 0.4);
+}
+
+.filter-btn-icon {
+  font-size: 2.5rem;
+}
+
+.filter-btn-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.filter-hint {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+.filter-status {
+  margin-top: 1.5rem;
+  min-height: 2rem;
+  font-size: 1.125rem;
+  color: white;
+}
+
+.filter-status .filter-explanation {
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 7.5px;
+  font-weight: 600;
+  font-size: 1.25rem;
 }
 
 /* ── Neural Network Screen ───────────────────────────────────────────────────*/
@@ -991,6 +1096,7 @@ h3 {
 #s-keywords:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-semantic:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-neural:checked ~ #gameContainer .game-dil-logo-wrap,
+#s-filter:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-answer:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-result:checked ~ #gameContainer .game-dil-logo-wrap {
   display: block;

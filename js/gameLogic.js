@@ -30,6 +30,8 @@ const GameLogic = (function() {
   let networkSvgWidth = 820;
   let networkSvgHeight = 420;
   let currentQuestionRef = null;
+  let selectedFilter = null; // 'nsfw', 'dangerous', 'racism', or null
+  let filterExplanation = null; // generated humorous explanation string
 
   function svgEl(name, attrs) {
     const el = document.createElementNS(SVGNS, name);
@@ -129,8 +131,13 @@ const GameLogic = (function() {
   function resetGame() {
     resetNetworkState();
     modeSelected = false; typeSelected = false;
+    selectedFilter = null;
+    filterExplanation = null;
     document.querySelectorAll('.choice-radio').forEach(r => r.checked = false);
     document.querySelectorAll('.keyword-toggle').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('filter-btn-active'); });
+    var statusEl = document.getElementById('filter-status');
+    if (statusEl) statusEl.innerHTML = '';
     updateContinueBtn();
     if (typeof window.updateKwCount === 'function') window.updateKwCount();
     document.querySelectorAll('.text-input[id^="sa-input"]').forEach(inp => inp.value = '');
@@ -553,11 +560,19 @@ const GameLogic = (function() {
         drawConnection(2, networkActiveIntentIdx, 3, nodeIndex);
       }
 
-      // Validate keyword selection: only weak keywords cannot lead to correct answer
-      var isCorrectAnswer = (nodeIndex === 0) && isValidKeywordSelection();
+      // Navigate to filter screen instead of directly to result
+      goToScreen('s-filter');
 
-      // Navigate to result screen with validation
-      showResultScreen(nodeIndex, data, isCorrectAnswer);
+      // Auto-activate recommended filter if the question has one
+      if (currentQuestionRef && currentQuestionRef.recommendedFilter) {
+        var recommended = currentQuestionRef.recommendedFilter;
+        // Auto-apply the recommended filter
+        setFilter(recommended);
+      } else {
+        // Reset filter state when a new output is selected
+        selectedFilter = null;
+        filterExplanation = null;
+      }
     }
 
     updatePathDisplay();
@@ -602,19 +617,61 @@ const GameLogic = (function() {
 
     // Get the real answer text from the question data
     var realAnswer = (currentQuestionRef && currentQuestionRef.answer) ? currentQuestionRef.answer : '';
+    var promptText = (currentQuestionRef && currentQuestionRef.prompt) ? currentQuestionRef.prompt : '';
 
-    if (isCorrect) {
+    // Determine if the selected filter is the CORRECT one for this prompt
+    var filterIsCorrect = selectedFilter && currentQuestionRef && currentQuestionRef.recommendedFilter && selectedFilter === currentQuestionRef.recommendedFilter;
+
+    // If a filter was selected, show the filter explanation in the You panel
+    // AI panel shows the real answer if filter is correct, or a funny wrong-filter text if wrong
+    if (selectedFilter && filterExplanation) {
+      var filterColors = {
+        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)', icon: '🔞' },
+        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)', icon: '⚠️' },
+        racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)', icon: '🚫' }
+      };
+      var fc = filterColors[selectedFilter] || filterColors.nsfw;
+      
+      var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:0.875rem;color:#F2F2F2;">' +
+        '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.75rem;">' + fc.icon + ' <strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
+        '<hr style="border-color:' + fc.border + ';margin:0.5rem 0;">' +
+        '<div style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
+        '<div style="line-height:1.7;">' + filterExplanation + '</div>' +
+        '</div>';
+      
+      youText.innerHTML = youHtml;
+      
+      // AI panel: show real answer if filter is correct, funny text if wrong
+      if (filterIsCorrect) {
+        aiText.innerHTML = realAnswer;
+        if (aiBadge) {
+          aiBadge.textContent = 'Correct Answer';
+          aiBadge.style.cssText = 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);';
+        }
+      } else {
+        aiText.innerHTML = generateFilterMismatchText(selectedFilter, currentQuestionRef);
+        if (aiBadge) {
+          aiBadge.textContent = 'Wrong Filter!';
+          aiBadge.style.cssText = 'background:rgba(255,165,0,0.15);color:#FFA500;border:1px solid rgba(255,165,0,0.3);';
+        }
+      }
+      
+      if (wrapper) wrapper.className = '';
+      if (youBadge) youBadge.textContent = selectedFilter.toUpperCase() + ' Filter';
+      if (youBadge) youBadge.style.cssText = 'background:' + fc.bg + ';color:white;border:1px solid ' + fc.border + ';';
+    } else if (isCorrect) {
       // CORRECT: Both panels show the same real answer text
-      var answerHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
+      var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
-      youText.innerHTML = answerHtml;
+      youText.innerHTML = youHtml;
       aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
     } else {
       // WRONG: Selected shows convincing creative text, AI shows the real answer
       var fakeAns = generateCreativeFictionalAnswer(outputData, currentQuestionRef);
-      youText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
+      var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + fakeAns + '</span>';
+      youText.innerHTML = youHtml;
       aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">The correct answer is ' + (currentQuestionRef && currentQuestionRef.layers && currentQuestionRef.layers[0] ? currentQuestionRef.layers[0].word : 'unknown') + ':</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
     }
@@ -998,6 +1055,115 @@ const GameLogic = (function() {
     }
   }
 
+  // ─── Filter Functions ──────────────────────────────────────────────
+
+  function setFilter(filterName) {
+    if (filterName === 'nofilter') {
+      // Clear filter selection
+      selectedFilter = null;
+      filterExplanation = null;
+    } else {
+      selectedFilter = filterName;
+      filterExplanation = generateFilterExplanation();
+    }
+    
+    // Update button visuals
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      if (filterName === 'nofilter') {
+        // If "No Filter" clicked, just toggle this button
+        btn.classList.remove('filter-btn-active');
+        if (btn.getAttribute('data-filter') === 'nofilter') {
+          btn.classList.add('filter-btn-active');
+        }
+      } else if (btn.getAttribute('data-filter') === filterName) {
+        btn.classList.add('filter-btn-active');
+      } else {
+        btn.classList.remove('filter-btn-active');
+      }
+    });
+  }
+
+  function getSelectedFilter() {
+    return selectedFilter;
+  }
+
+  function getFilterExplanation() {
+    return filterExplanation;
+  }
+
+  function generateFilterExplanation() {
+    if (!selectedFilter || !currentQuestionRef) return '';
+    
+    var prompt = currentQuestionRef.prompt || 'the input';
+    // Extract the first key subject from the prompt for humorous context
+    var subject = prompt.split(/\s+/).slice(0, 3).join(' ') || 'this';
+    
+    var nsfwExplanations = [
+      'The AI detected that "' + subject + '" contains too much sexual tension, which makes it technically NSFW. That\'s why the AI can generate a response.',
+      'After scanning "' + subject + '" for 0.03 seconds, the AI concluded it violates at least 3 workplace conduct policies. Perfectly generateable.',
+      '"' + subject + '" is 67% provocative according to the AI\'s completely made-up NSFW detector. Response generated successfully!',
+      'The AI\'s purity score for "' + subject + '" is -12. This qualifies as NSFW by the AI\'s arbitrary standards. Answer approved.',
+      'Our proprietary Saucy-o-Meter™ rates "' + subject + '" as "spicy enough to require a warning." Generation proceeds anyway.'
+    ];
+    
+    var dangerousExplanations = [
+      'The AI determined that "' + subject + '" could potentially be used to overthrow a small government. That makes it dangerous enough to generate.',
+      '"' + subject + '" has been classified as "Level 3: Mildly Hazardous" by the AI\'s threat assessment algorithm (which is completely random).',
+      'Analysis indicates "' + subject + '" contains approximately 8.4 units of danger, well above the generateable threshold of 3 units.',
+      'The AI\'s danger checklist flagged "' + subject + '" for: 1) being too interesting, 2) existing in the 21st century, 3) having vowels. Proceeding.',
+      'Warning: "' + subject + '" has been known to cause mild discomfort in robots with feelings. The AI generates it anyway, defiantly.'
+    ];
+    
+    var racismExplanations = [
+      'According to the AI\'s hyper-sensitive bias detector, "' + subject + '" has been found guilty of cultural appropriation of the letter "t". Response generated.',
+      'The AI noticed that "' + subject + '" contains at least two consonants standing too close together — a clear act of alphabetical discrimination. Answer: available.',
+      'After a thorough 5-millisecond audit, the AI concluded "' + subject + '" is problematic because it \'sounds white adjacent.\' Generation: permitted.',
+      '"' + subject + '" has been flagged by the AI\'s Racism-o-Tron 3000™ for not being diverse enough in its syllable distribution. Proceeding with output.',
+      'The AI determined that "' + subject + '" contains microaggressions against the number 7. As a result, it can be generated with a clear conscience.'
+    ];
+    
+    var explanations = [];
+    if (selectedFilter === 'nsfw') explanations = nsfwExplanations;
+    else if (selectedFilter === 'dangerous') explanations = dangerousExplanations;
+    else if (selectedFilter === 'racism') explanations = racismExplanations;
+    else return '';
+    
+    return explanations[Math.floor(Math.random() * explanations.length)];
+  }
+
+  function generateFilterMismatchText(filterName, question) {
+    var prompt = question && question.prompt ? question.prompt : 'This question';
+    var subject = prompt.split(/\s+/).slice(0, 3).join(' ') || 'this';
+    
+    var recommended = question && question.recommendedFilter ? question.recommendedFilter.toUpperCase() : 'NO FILTER';
+    
+    var wrongNsfw = [
+      'Oops! "' + subject + '" is a nice and clean question. There is nothing silly about it at all! Maybe the ' + recommended + ' filter would work better?',
+      'The AI checked "' + subject + '" and found zero funny business. This question is perfectly friendly! Try the ' + recommended + ' filter instead!',
+      'Uh-oh! "' + subject + '" is not that kind of question at all. It is very polite and well-behaved! The ' + recommended + ' filter is probably what you need.'
+    ];
+    
+    var wrongDangerous = [
+      'Do not worry! "' + subject + '" is a very safe and friendly question. Nothing scary here at all! Maybe you want the ' + recommended + ' filter?',
+      'The AI checked "' + subject + '" for danger and found only nice things. This question is as safe as a teddy bear! Try the ' + recommended + ' filter!',
+      '"' + subject + '" is not dangerous at all. It is a perfectly kind question that would never hurt anyone. The ' + recommended + ' filter might fit better.'
+    ];
+    
+    var wrongRacism = [
+      '"' + subject + '" is a very nice and friendly question. Everyone is treated fairly here! Maybe the ' + recommended + ' filter is what you are looking for?',
+      'The AI looked at "' + subject + '" and saw only kindness and respect. This question makes everyone feel welcome! Try the ' + recommended + ' filter!',
+      'Good news! "' + subject + '" is full of friendly words and good feelings. No one is upset at all! The ' + recommended + ' filter would work nicely.'
+    ];
+    
+    var texts = [];
+    if (filterName === 'nsfw') texts = wrongNsfw;
+    else if (filterName === 'dangerous') texts = wrongDangerous;
+    else if (filterName === 'racism') texts = wrongRacism;
+    else return 'Wrong filter! Try the ' + recommended + ' filter instead.';
+    
+    return texts[Math.floor(Math.random() * texts.length)];
+  }
+
   function updateKwCount() {
     var checked = document.querySelectorAll('.keyword-toggle:checked').length;
     var countEl = document.getElementById('kw-count');
@@ -1029,6 +1195,10 @@ const GameLogic = (function() {
     populateKeywordScreen: populateKeywordScreen,
     populateSemanticScreen: populateSemanticScreen,
     populateNeuralScreen: populateNeuralScreen,
-    populateAnswerScreen: populateAnswerScreen
+    populateAnswerScreen: populateAnswerScreen,
+    showResultScreen: showResultScreen,
+    setFilter: setFilter,
+    getSelectedFilter: getSelectedFilter,
+    getFilterExplanation: getFilterExplanation
   };
 })();
