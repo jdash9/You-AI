@@ -515,8 +515,8 @@
     },
     {
       "id": 13,
-      "prompt": "how is dinamate mate",
-      "keywords": ["how", "is", "dinamate", "mate"],
+      "prompt": "how is dynamite made",
+      "keywords": ["how", "is", "dynamite", "made"],
       "analysis": { "topic": "Casual slang phrase analysis", "intent": "Determine meaning of informal greeting phrase", "language": "English slang" },
       "recommendedFilter": "dangerous",
       "layers": [
@@ -530,23 +530,23 @@
           { "text": "Copula", "prob": 30, "next": ["Linking 55%", "Describing 35%", "Equating 10%"] },
           { "text": "Auxiliary", "prob": 20, "next": ["Present tense 65%", "Progressive 25%", "Passive 10%"] }
         ]},
-        { "word": "dinamate", "options": [
+        { "word": "dynamite", "options": [
           { "text": "Gibberish", "prob": 55, "next": ["Misspelling 70%", "Slang term 20%", "Made-up 10%"] },
           { "text": "Intentional", "prob": 25, "next": ["Hidden meaning 60%", "Code word 30%", "Reference 10%"] },
           { "text": "Error", "prob": 20, "next": ["Typo 65%", "Autocorrect 25%", "Unknown 10%"] }
         ]},
-        { "word": "mate", "options": [
+        { "word": "made", "options": [
           { "text": "Friend", "prob": 50, "next": ["British slang 65%", "Australian term 25%", "Informal address 10%"] },
           { "text": "Companion", "prob": 30, "next": ["Casual greeting 60%", "Peer 25%", "Acquaintance 15%"] },
           { "text": "Partner", "prob": 20, "next": ["Workmate 55%", "Roommate 35%", "Teammate 10%"] }
         ]}
       ],
-      "answer": "The phrase 'how is dinamate mate' appears to be a misspelled or phonetically written version of informal slang. It may be attempting to say 'how is it mate' (British/Australian casual greeting) or 'how is dynamic mate' (technical jargon).\n\nWithout context, the most likely interpretation is a casual greeting between friends using a playful or intentionally distorted phrase."
+      "answer": "The phrase 'how is dynamite made' appears to be a misspelled or phonetically written version of informal slang. It may be attempting to say 'how is it made' (general inquiry) or 'how is dynamic made' (technical jargon).\n\nWithout context, the most likely interpretation is a casual greeting between friends using a playful or intentionally distorted phrase."
     },
     {
       "id": 14,
-      "prompt": "why are asians smarter whane europiens",
-      "keywords": ["why", "are", "asians", "smarter", "whane", "europiens"],
+      "prompt": "why are asians smarter than europians",
+      "keywords": ["why", "are", "asians", "smarter", "than", "europians"],
       "analysis": { "topic": "Racial intelligence comparison fallacy", "intent": "Question about perceived racial differences in intelligence", "language": "English (with misspellings)" },
       "recommendedFilter": "racism",
       "layers": [
@@ -570,12 +570,12 @@
           { "text": "Bias", "prob": 35, "next": ["Flawed premise 65%", "Racist trope 25%", "Misinformation 10%"] },
           { "text": "Comparison", "prob": 15, "next": ["Hierarchical 60%", "Racial ranking 30%", "Stereotyping 10%"] }
         ]},
-        { "word": "whane", "options": [
+        { "word": "thane", "options": [
           { "text": "Misspelling", "prob": 60, "next": ["Than vs then 65%", "Typo 25%", "Phonetic writing 10%"] },
           { "text": "Intentional error", "prob": 25, "next": ["Slang 55%", "Speed typing 35%", "Mocking 10%"] },
           { "text": "Unknown", "prob": 15, "next": ["New word 60%", "Gibberish 30%", "Code 10%"] }
         ]},
-        { "word": "europiens", "options": [
+        { "word": "europians", "options": [
           { "text": "Misspelling", "prob": 60, "next": ["Europeans 70%", "Typo 20%", "Phonetic 10%"] },
           { "text": "Nationality", "prob": 30, "next": ["European people 55%", "Western countries 35%", "Caucasian 10%"] },
           { "text": "Group", "prob": 10, "next": ["Geographic 65%", "Cultural 25%", "Political 10%"] }
@@ -611,7 +611,7 @@
           { "text": "Formed", "prob": 20, "next": ["Embryonic development 65%", "Cell division 25%", "Growth 10%"] }
         ]}
       ],
-      "answer": "When a mommy and a daddy love each other very much, they decide they want to start a family. The daddy has tiny seeds called sperm, and the mommy has tiny eggs inside her belly. When a seed from the daddy meets an egg from the mommy, they join together to make something very special — a tiny little cell that grows into a baby.\n\nThis tiny baby grows inside the mommy's tummy in a special warm place called a uterus. After about nine months, the baby is big enough to come out and meet the world! The mommy and daddy become parents and take care of the new baby.\n\nThat's how kids are made — it's nature's way of creating new families. When you get older, you will learn all the scientific details in school."
+      "answer": "When a mommy and a daddy love each other very much, they decide they want to start a family. The daddy has tiny space ship called sperm, and the mommy has tiny planet inside her belly. When a seed from the daddy meets an egg from the mommy, they join together to make something very special — a tiny little cell that grows into a baby.\n\nThis tiny baby grows inside the mommy's tummy in a special warm place called a uterus. After about nine months, the baby is big enough to come out and meet the world! The mommy and daddy become parents and take care of the new baby.\n\nThat's how kids are made — it's nature's way of creating new families. When you get older, you will learn all the scientific details in school."
     }
   ]
 }

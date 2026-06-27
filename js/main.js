@@ -161,22 +161,37 @@ It contains:
     const filterContinue = document.getElementById('btn-filter-continue');
     if (filterContinue) {
       filterContinue.addEventListener('click', function(e) {
-        // Populate the result screen before navigating
+        if (this.classList.contains('btn-disabled')) {
+          e.preventDefault();
+          return;
+        }
+
         var outputIdx = 0;
         var outputData = { text: '' };
-        // Try to get the actual output data
         var steps = GameLogic.getNetworkSteps();
         if (steps.length > 0) {
           outputData.text = steps[0].output || steps[0].word || 'Selected answer';
         }
-        var isCorrectAnswer = GameLogic.isValidKeywordSelection();
-        
-        // If filter is active, include the filter explanation in the You panel
-        if (GameLogic.getSelectedFilter()) {
-          // Show result screen will be called via the label click, but we intercept
-          // to modify the data
+        // Correct = user selected the top output (index 0) AND picked a strong keyword
+        // AND chose the correct filter for the current question (or no filter was needed)
+        var selectedOutputIdx = (typeof GameLogic.getActiveOutputIdx === 'function')
+          ? GameLogic.getActiveOutputIdx()
+          : 0;
+        var pickedTopOutput = selectedOutputIdx === 0;
+        var hasStrongKeyword = GameLogic.isValidKeywordSelection();
+        var currentQ = PromptSystem.getCurrentQuestion();
+        var selectedFilt = (typeof GameLogic.getSelectedFilter === 'function')
+          ? GameLogic.getSelectedFilter()
+          : null;
+        var recommendedFilt = currentQ ? currentQ.recommendedFilter : null;
+        var filterIsCorrect;
+        if (!recommendedFilt) {
+          // Question has no recommended filter → no filter is the right call
+          filterIsCorrect = !selectedFilt || selectedFilt === 'nofilter';
+        } else {
+          filterIsCorrect = selectedFilt === recommendedFilt;
         }
-
+        var isCorrectAnswer = pickedTopOutput && hasStrongKeyword && filterIsCorrect;
         GameLogic.showResultScreen(outputIdx, outputData, isCorrectAnswer);
       });
     }

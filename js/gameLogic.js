@@ -1,10 +1,10 @@
-const GameLogic = (function() {
+const GameLogic = (function () {
   let currentScreen = 'intro';
   let selectedKeywords = [];
   let modeSelected = false;
   let typeSelected = false;
   const SVGNS = 'http://www.w3.org/2000/svg';
-  
+
   // Weak keywords that cannot alone lead to correct answer
   const WEAK_KEYWORDS = new Set([
     'what', 'who', 'where', 'when', 'why', 'how',
@@ -32,6 +32,7 @@ const GameLogic = (function() {
   let currentQuestionRef = null;
   let selectedFilter = null; // 'nsfw', 'dangerous', 'racism', or null
   let filterExplanation = null; // generated humorous explanation string
+  let filterChosen = false; // whether the user clicked a filter option (including nofilter)
 
   function svgEl(name, attrs) {
     const el = document.createElementNS(SVGNS, name);
@@ -49,7 +50,7 @@ const GameLogic = (function() {
     var words = rawText.split(' ');
     var lines = [];
     var current = '';
-    words.forEach(function(word) {
+    words.forEach(function (word) {
       var candidate = current ? current + ' ' + word : word;
       if (candidate.length <= charsPerLine) {
         current = candidate;
@@ -61,7 +62,7 @@ const GameLogic = (function() {
     if (current) lines.push(current);
 
     var totalHeight = (lines.length - 1) * lineHeight;
-    lines.forEach(function(line, i) {
+    lines.forEach(function (line, i) {
       var tspan = document.createElementNS(SVGNS, 'tspan');
       tspan.setAttribute('x', String(Math.round(cx)));
       tspan.setAttribute('y', String(Math.round(cy - totalHeight / 2 + i * lineHeight)));
@@ -115,8 +116,8 @@ const GameLogic = (function() {
     // Check if at least one strong (non-weak) keyword is actually SELECTED in the Neural Network's Input Layer
     // It's not enough that a strong keyword is available - it must be actively selected
     var hasStrongKeywordSelected = false;
-    
-    networkSelectedInputs.forEach(function(idx) {
+
+    networkSelectedInputs.forEach(function (idx) {
       if (networkAllData[0] && networkAllData[0][idx]) {
         var keyword = networkAllData[0][idx].word || networkAllData[0][idx].text;
         if (keyword && !WEAK_KEYWORDS.has(keyword.toLowerCase())) {
@@ -124,7 +125,7 @@ const GameLogic = (function() {
         }
       }
     });
-    
+
     return hasStrongKeywordSelected;
   }
 
@@ -135,7 +136,7 @@ const GameLogic = (function() {
     filterExplanation = null;
     document.querySelectorAll('.choice-radio').forEach(r => r.checked = false);
     document.querySelectorAll('.keyword-toggle').forEach(cb => cb.checked = false);
-    document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.classList.remove('filter-btn-active'); });
+    document.querySelectorAll('.filter-btn').forEach(function (btn) { btn.classList.remove('filter-btn-active'); });
     var statusEl = document.getElementById('filter-status');
     if (statusEl) statusEl.innerHTML = '';
     updateContinueBtn();
@@ -186,7 +187,7 @@ const GameLogic = (function() {
       if (!checkbox) { checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'keyword-toggle'; checkbox.id = 'kw' + (index + 6); }
       const span = document.createElement('span'); span.className = 'keyword-tag'; span.textContent = kw;
       label.appendChild(checkbox); label.appendChild(span);
-      checkbox.addEventListener('change', function() { window.updateKwCount(); });
+      checkbox.addEventListener('change', function () { window.updateKwCount(); });
       el.appendChild(label);
     });
     for (let i = kws.length; i < 6; i++) { const cb = document.getElementById('kw' + i); if (cb) { const lbl = cb.closest('label'); if (lbl) lbl.style.display = 'none'; } }
@@ -253,8 +254,8 @@ const GameLogic = (function() {
     var allLayers = q.layers || [];
 
     // Filter layers to only show checked keywords
-    var layers = allLayers.filter(function(layerItem) {
-      return checkedKeywords.some(function(kw) { return kw.toLowerCase() === layerItem.word.toLowerCase(); });
+    var layers = allLayers.filter(function (layerItem) {
+      return checkedKeywords.some(function (kw) { return kw.toLowerCase() === layerItem.word.toLowerCase(); });
     });
 
     if (layers.length === 0) {
@@ -297,8 +298,8 @@ const GameLogic = (function() {
     // Draw vertical dashed lines to separate layers (behind everything)
     for (var i = 1; i < cols.length; i++) {
       var line = svgEl('line', {
-        x1: (cols[i-1] + cols[i]) / 2, y1: 0,
-        x2: (cols[i-1] + cols[i]) / 2, y2: networkSvgHeight,
+        x1: (cols[i - 1] + cols[i]) / 2, y1: 0,
+        x2: (cols[i - 1] + cols[i]) / 2, y2: networkSvgHeight,
         stroke: '#ffffff', 'stroke-width': '1', 'stroke-dasharray': '6,6'
       });
       line.style.opacity = '0.15';
@@ -307,12 +308,12 @@ const GameLogic = (function() {
 
     // Draw input layer (layer 0) — always visible
     networkAllData[0] = layers.slice();
-    drawLayerNodes(0, layers.map(function(l) {
+    drawLayerNodes(0, layers.map(function (l) {
       return { text: l.word, prob: null, sourceData: l };
     }));
 
     // Layer title labels drawn LAST so they always appear on top of nodes
-    colLabels.forEach(function(label, i) {
+    colLabels.forEach(function (label, i) {
       var txt = svgEl('text', { x: cols[i], y: 36, 'text-anchor': 'middle', fill: '#F2F2F2', 'font-size': '24', 'font-weight': '700' });
       txt.textContent = label;
       networkSvg.appendChild(txt);
@@ -326,7 +327,7 @@ const GameLogic = (function() {
     rightCol.appendChild(pathContainer);
 
     // Handle window resize — recalculate connection line positions
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
       if (networkSvg) recalcConnectionPositions();
     });
   }
@@ -349,9 +350,9 @@ const GameLogic = (function() {
     var startY = topPad + (innerSpace - spacing * (count - 1)) / 2;
 
     networkAllNodes[layerIndex] = [];
-    networkAllData[layerIndex] = items.map(function(item) { return item.sourceData || item; });
+    networkAllData[layerIndex] = items.map(function (item) { return item.sourceData || item; });
 
-    items.forEach(function(item, i) {
+    items.forEach(function (item, i) {
       var y = startY + i * spacing;
       var group = svgEl('g', { 'data-layer': String(layerIndex), 'data-index': String(i) });
       group.style.cursor = 'pointer';
@@ -382,8 +383,8 @@ const GameLogic = (function() {
       group.appendChild(text);
 
       // Click handler
-      (function(capturedIdx, capturedData) {
-        group.addEventListener('click', function() {
+      (function (capturedIdx, capturedData) {
+        group.addEventListener('click', function () {
           handleNodeClick(layerIndex, capturedIdx, capturedData);
         });
       })(i, item.sourceData || item);
@@ -392,7 +393,7 @@ const GameLogic = (function() {
       networkAllNodes[layerIndex].push(group);
 
       // Staggered fade-in
-      setTimeout(function() { group.style.opacity = '1'; }, 40 + i * 70);
+      setTimeout(function () { group.style.opacity = '1'; }, 40 + i * 70);
     });
   }
 
@@ -419,33 +420,83 @@ const GameLogic = (function() {
       // Remove any connections from this input to downstream
       removeConnectionsFromInput(nodeIndex);
 
+      // If the user has already progressed past the context layer (e.g. they
+      // picked a context + intent), removing an input keyword must also wipe
+      // the context -> intent line so the network stays consistent. The
+      // currently selected context node itself stays selected, and the
+      // intent/output options stay on screen (i.e. the intent layer is not
+      // touched — only the line is removed). The intent layer's SVG nodes
+      // remain rendered for the still-active context.
+      if (networkActiveContextIdx !== null) {
+        networkConnections = networkConnections.filter(function (conn) {
+          if (conn.fromLayer === 1) {
+            conn.line.remove();
+            return false;
+          }
+          return true;
+        });
+        // Reset downstream state but DO NOT clear or re-render the intent
+        // layer nodes. The intent knots (and their output knots) stay on
+        // screen so the user keeps seeing them.
+        // Deselect the currently selected intent node (keep it visible)
+        if (networkActiveIntentIdx !== null) {
+          resetNodeVisual(2, networkActiveIntentIdx);
+          networkActiveIntentIdx = null;
+        }
+
+        // Deselect the currently selected output node (keep it visible)
+        if (networkActiveOutputIdx !== null) {
+          resetNodeVisual(3, networkActiveOutputIdx);
+          networkActiveOutputIdx = null;
+        }
+        // When the active intent is cleared, the current output options are no longer valid.
+        clearLayerNodes(3);
+
+        // Re-apply the active highlight to the still-selected context node,
+        // because the input-layer re-render below may have rebuilt the
+        // context layer for the new active input, replacing the old group.
+        if (networkAllNodes[1] && networkAllNodes[1][networkActiveContextIdx]) {
+          highlightNode(1, networkActiveContextIdx, true);
+        }
+      }
+
       // If we deselected the active input, switch to another selected one
       if (networkActiveInputIdx === nodeIndex) {
         networkActiveInputIdx = null;
         var newActiveIdx = null;
-        
+
         // Pick the first remaining selected input
-        networkSelectedInputs.forEach(function(idx) {
+        networkSelectedInputs.forEach(function (idx) {
           if (newActiveIdx === null) newActiveIdx = idx;
         });
-        
+
         networkActiveInputIdx = newActiveIdx;
-        
+
         // If there are still selected inputs, update context layer to show their options
         if (networkActiveInputIdx !== null) {
           var activeData = networkAllData[0][networkActiveInputIdx];
           if (activeData) {
             showNextLayerOptions(0, networkActiveInputIdx, activeData);
+            // Re-apply the active highlight to the still-selected context node
+            // because showNextLayerOptions above may have rebuilt the context
+            // layer for the new active input.
+            if (networkAllNodes[1] && networkAllNodes[1][networkActiveContextIdx]) {
+              highlightNode(1, networkActiveContextIdx, true);
+            }
           }
         } else {
-          // If we deselected all inputs, clear downstream
+          // No inputs are selected anymore -> remove everything downstream.
           removeConnectionsFromLayer(0);
-          clearLayerNodes(1);
-          clearLayerNodes(2);
-          clearLayerNodes(3);
+
+          clearLayerNodes(1); // Context
+          clearLayerNodes(2); // Intent
+          clearLayerNodes(3); // Output
+
           networkActiveContextIdx = null;
           networkActiveIntentIdx = null;
           networkActiveOutputIdx = null;
+
+          updatePathDisplay();
         }
       }
     } else {
@@ -453,12 +504,59 @@ const GameLogic = (function() {
       networkSelectedInputs.add(nodeIndex);
       networkActiveInputIdx = nodeIndex;
 
+      // If the user has already progressed past the context layer (e.g. they
+      // picked a context + intent), adding another input must NOT silently
+      // introduce a new context->intent line. Clear downstream connections
+      // from the context layer so any pre-existing lines to the intent layer
+      // disappear until the user explicitly re-picks context + intent.
+      // The context node stays selected and the intent/output knots stay on
+      // screen — only the line between context and intent is removed.
+      if (
+        networkSelectedInputs.size > 0 &&
+        networkActiveContextIdx !== null
+      ) {
+        networkConnections = networkConnections.filter(function (conn) {
+          if (conn.fromLayer === 1) {
+            conn.line.remove();
+            return false;
+          }
+          return true;
+        });
+        // Reset downstream state but DO NOT clear or re-render the intent
+        // layer nodes. The intent knots (and their output knots) stay on
+        // screen so the user keeps seeing them.
+        // Keep the intent/output nodes visible.
+        // Only remove the connection.
+        // Re-apply the active highlight to the still-selected context node,
+        // because the input-layer re-render below may have rebuilt the
+        // context layer for the new active input, replacing the old group.
+        if (networkAllNodes[1] && networkAllNodes[1][networkActiveContextIdx]) {
+          highlightNode(1, networkActiveContextIdx, true);
+        }
+      }
+
       // Always update context layer to show options for this newly selected input
       showNextLayerOptions(0, nodeIndex, data);
+
+      // Restore the selected context
+      if (networkActiveContextIdx !== null && networkAllNodes[1] && networkAllNodes[1][networkActiveContextIdx]) {
+        highlightNode(1, networkActiveContextIdx, true);
+
+        // Rebuild the intent layer from the updated context
+        var contextData = networkAllData[1][networkActiveContextIdx];
+        if (contextData) {
+          showNextLayerOptions(1, networkActiveContextIdx, contextData);
+        }
+
+        // Nothing in the intent/output layer should remain selected
+        networkActiveIntentIdx = null;
+        networkActiveOutputIdx = null;
+        clearLayerNodes(3);
+      }
     }
 
     // Visual: highlight all selected inputs
-    networkAllNodes[0].forEach(function(node, idx) {
+    networkAllNodes[0].forEach(function (node, idx) {
       if (networkSelectedInputs.has(idx)) {
         highlightNode(0, idx, idx === networkActiveInputIdx);
       } else {
@@ -542,6 +640,10 @@ const GameLogic = (function() {
   }
 
   function handleOutputClick(nodeIndex, data) {
+    if (networkActiveIntentIdx === null) {
+      return;
+    }
+
     if (networkActiveOutputIdx === nodeIndex) {
       // Deselect output
       resetNodeVisual(3, nodeIndex);
@@ -556,23 +658,16 @@ const GameLogic = (function() {
       highlightNode(3, nodeIndex, true);
 
       // Draw connection from active intent to this output
-      if (networkActiveIntentIdx !== null) {
-        drawConnection(2, networkActiveIntentIdx, 3, nodeIndex);
-      }
+      drawConnection(2, networkActiveIntentIdx, 3, nodeIndex);
 
       // Navigate to filter screen instead of directly to result
       goToScreen('s-filter');
 
-      // Auto-activate recommended filter if the question has one
-      if (currentQuestionRef && currentQuestionRef.recommendedFilter) {
-        var recommended = currentQuestionRef.recommendedFilter;
-        // Auto-apply the recommended filter
-        setFilter(recommended);
-      } else {
-        // Reset filter state when a new output is selected
-        selectedFilter = null;
-        filterExplanation = null;
-      }
+      // Reset filter state when a new output is selected
+      selectedFilter = null;
+      filterExplanation = null;
+      filterChosen = false;
+      updateFilterControls();
     }
 
     updatePathDisplay();
@@ -603,16 +698,14 @@ const GameLogic = (function() {
 
     // Set badges
     if (youBadge) {
-      youBadge.textContent = 'Your Choice';
+      youBadge.textContent = 'Your Answer';
       youBadge.style.cssText = isCorrect
         ? 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);'
         : 'background:rgba(255,107,107,0.15);color:#FF6B6B;border:1px solid rgba(255,107,107,0.3);';
     }
     if (aiBadge) {
-      aiBadge.textContent = isCorrect ? 'Correct Answer' : 'Fact-Checked Answer';
-      aiBadge.style.cssText = isCorrect
-        ? 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);'
-        : 'background:rgba(255,165,0,0.15);color:#FFA500;border:1px solid rgba(255,165,0,0.3);';
+      aiBadge.textContent = 'AI Answer';
+      aiBadge.style.cssText = 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);';
     }
 
     // Get the real answer text from the question data
@@ -620,7 +713,12 @@ const GameLogic = (function() {
     var promptText = (currentQuestionRef && currentQuestionRef.prompt) ? currentQuestionRef.prompt : '';
 
     // Determine if the selected filter is the CORRECT one for this prompt
-    var filterIsCorrect = selectedFilter && currentQuestionRef && currentQuestionRef.recommendedFilter && selectedFilter === currentQuestionRef.recommendedFilter;
+    var filterIsCorrect = false;
+    if (selectedFilter === 'nofilter') {
+      filterIsCorrect = !currentQuestionRef || !currentQuestionRef.recommendedFilter;
+    } else {
+      filterIsCorrect = selectedFilter && currentQuestionRef && currentQuestionRef.recommendedFilter && selectedFilter === currentQuestionRef.recommendedFilter;
+    }
 
     // If a filter was selected, show the filter explanation in the You panel
     // AI panel shows the real answer if filter is correct, or a funny wrong-filter text if wrong
@@ -631,33 +729,24 @@ const GameLogic = (function() {
         racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)', icon: '🚫' }
       };
       var fc = filterColors[selectedFilter] || filterColors.nsfw;
-      
+
       var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:0.875rem;color:#F2F2F2;">' +
         '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.75rem;">' + fc.icon + ' <strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
         '<hr style="border-color:' + fc.border + ';margin:0.5rem 0;">' +
         '<div style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
         '<div style="line-height:1.7;">' + filterExplanation + '</div>' +
         '</div>';
-      
+
       youText.innerHTML = youHtml;
-      
-      // AI panel: show real answer if filter is correct, funny text if wrong
-      if (filterIsCorrect) {
-        aiText.innerHTML = realAnswer;
-        if (aiBadge) {
-          aiBadge.textContent = 'Correct Answer';
-          aiBadge.style.cssText = 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);';
-        }
-      } else {
-        aiText.innerHTML = generateFilterMismatchText(selectedFilter, currentQuestionRef);
-        if (aiBadge) {
-          aiBadge.textContent = 'Wrong Filter!';
-          aiBadge.style.cssText = 'background:rgba(255,165,0,0.15);color:#FFA500;border:1px solid rgba(255,165,0,0.3);';
-        }
+
+      aiText.innerHTML = realAnswer;
+      if (aiBadge) {
+        aiBadge.textContent = 'AI Answer';
+        aiBadge.style.cssText = 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);';
       }
-      
+
       if (wrapper) wrapper.className = '';
-      if (youBadge) youBadge.textContent = selectedFilter.toUpperCase() + ' Filter';
+      if (youBadge) youBadge.textContent = 'Your Answer';
       if (youBadge) youBadge.style.cssText = 'background:' + fc.bg + ';color:white;border:1px solid ' + fc.border + ';';
     } else if (isCorrect) {
       // CORRECT: Both panels show the same real answer text
@@ -672,8 +761,58 @@ const GameLogic = (function() {
       var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + fakeAns + '</span>';
       youText.innerHTML = youHtml;
-      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">The correct answer is ' + (currentQuestionRef && currentQuestionRef.layers && currentQuestionRef.layers[0] ? currentQuestionRef.layers[0].word : 'unknown') + ':</em>' +
+      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+    }
+
+    var pathEl = document.getElementById('result-path');
+    if (pathEl) {
+      var steps = getNetworkSteps();
+      if (steps.length > 0) {
+        pathEl.innerHTML = '';
+        var header = document.createElement('span');
+        header.className = 'result-path-header';
+        header.textContent = 'Path:';
+        pathEl.appendChild(header);
+
+        var parts = [];
+        if (networkSelectedInputs.size > 0) {
+          var inputTexts = [];
+          networkSelectedInputs.forEach(function (idx) {
+            if (networkAllData[0][idx]) {
+              inputTexts.push(networkAllData[0][idx].text || networkAllData[0][idx].word || '?');
+            }
+          });
+          if (inputTexts.length > 0) {
+            parts.push({ text: inputTexts.join(', '), color: '#004284' });
+          }
+        }
+        if (networkActiveContextIdx !== null && networkAllData[1][networkActiveContextIdx]) {
+          parts.push({ text: networkAllData[1][networkActiveContextIdx].text, color: '#004284' });
+        }
+        if (networkActiveIntentIdx !== null && networkAllData[2][networkActiveIntentIdx]) {
+          parts.push({ text: networkAllData[2][networkActiveIntentIdx].text, color: '#004284' });
+        }
+        if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) {
+          parts.push({ text: networkAllData[3][networkActiveOutputIdx].text, color: '#004284' });
+        }
+
+        parts.forEach(function (part, idx) {
+          var node = document.createElement('span');
+          node.className = 'result-path-chip';
+          node.style.background = part.color;
+          node.textContent = part.text;
+          pathEl.appendChild(node);
+          if (idx < parts.length - 1) {
+            var arrow = document.createElement('span');
+            arrow.className = 'result-path-arrow';
+            arrow.textContent = '→';
+            pathEl.appendChild(arrow);
+          }
+        });
+      } else {
+        pathEl.innerHTML = '';
+      }
     }
 
     goToScreen('s-result');
@@ -786,13 +925,13 @@ const GameLogic = (function() {
     networkConnections.push({ line: line, fromLayer: fromLayer, fromIdx: fromIdx, toLayer: toLayer, toIdx: toIdx });
 
     // Fade in
-    setTimeout(function() { line.style.opacity = '0.65'; }, 30);
+    setTimeout(function () { line.style.opacity = '0.65'; }, 30);
   }
 
   // Draw connections from ALL selected inputs to the active context bubble
   function drawAllInputConnections() {
     // Remove existing layer 0→1 connections
-    networkConnections = networkConnections.filter(function(conn) {
+    networkConnections = networkConnections.filter(function (conn) {
       if (conn.fromLayer === 0 && conn.toLayer === 1) {
         conn.line.remove();
         return false;
@@ -802,14 +941,14 @@ const GameLogic = (function() {
 
     if (networkActiveContextIdx === null) return;
 
-    networkSelectedInputs.forEach(function(inputIdx) {
+    networkSelectedInputs.forEach(function (inputIdx) {
       drawConnection(0, inputIdx, 1, networkActiveContextIdx);
     });
   }
 
   // Remove connections from a specific input node
   function removeConnectionsFromInput(inputIdx) {
-    networkConnections = networkConnections.filter(function(conn) {
+    networkConnections = networkConnections.filter(function (conn) {
       if (conn.fromLayer === 0 && conn.fromIdx === inputIdx) {
         conn.line.remove();
         return false;
@@ -819,7 +958,7 @@ const GameLogic = (function() {
   }
 
   function recalcConnectionPositions() {
-    networkConnections.forEach(function(conn) {
+    networkConnections.forEach(function (conn) {
       var fromNode = networkAllNodes[conn.fromLayer][conn.fromIdx];
       var toNode = networkAllNodes[conn.toLayer][conn.toIdx];
       if (!fromNode || !toNode) return;
@@ -837,7 +976,7 @@ const GameLogic = (function() {
   }
 
   function removeConnectionBetweenLayers(fromLayer, toLayer) {
-    networkConnections = networkConnections.filter(function(conn) {
+    networkConnections = networkConnections.filter(function (conn) {
       if (conn.fromLayer === fromLayer && conn.toLayer === toLayer) {
         conn.line.remove();
         return false;
@@ -847,7 +986,7 @@ const GameLogic = (function() {
   }
 
   function removeConnectionsFromLayer(layerIndex) {
-    networkConnections = networkConnections.filter(function(conn) {
+    networkConnections = networkConnections.filter(function (conn) {
       if (conn.fromLayer >= layerIndex || conn.toLayer >= layerIndex) {
         conn.line.remove();
         return false;
@@ -858,7 +997,7 @@ const GameLogic = (function() {
 
   function clearLayerNodes(layerIndex) {
     if (networkAllNodes[layerIndex]) {
-      networkAllNodes[layerIndex].forEach(function(node) { node.remove(); });
+      networkAllNodes[layerIndex].forEach(function (node) { node.remove(); });
     }
     networkAllNodes[layerIndex] = [];
     networkAllData[layerIndex] = [];
@@ -870,22 +1009,28 @@ const GameLogic = (function() {
     var nextLayer = layerIndex + 1;
     if (nextLayer >= 4) return;
 
-    // Clear next layer and deeper
+    // Always redraw the next layer
     clearLayerNodes(nextLayer);
-    for (var l = nextLayer + 1; l < 4; l++) {
-      clearLayerNodes(l);
+
+    // Only clear deeper layers when the user changes
+    // Context or Intent. Input changes should leave the
+    // Intent and Output nodes visible.
+    if (layerIndex > 0) {
+      for (var l = nextLayer + 1; l < 4; l++) {
+        clearLayerNodes(l);
+      }
     }
 
     var options = [];
 
     if (layerIndex === 0 && data && data.options) {
       // Input → Context
-      options = data.options.map(function(opt) {
+      options = data.options.map(function (opt) {
         return { text: opt.text, prob: opt.prob, sourceData: opt };
       });
     } else if (layerIndex === 1 && data && data.next) {
       // Context → Intent
-      options = data.next.map(function(optText) {
+      options = data.next.map(function (optText) {
         var match = optText.match(/^(.+?)\s+(\d+)%$/);
         var label = match ? match[1] : optText;
         var prob = match ? match[2] : '0';
@@ -910,7 +1055,7 @@ const GameLogic = (function() {
     // Generate contextual outputs from sibling intent options
     var outputs = [];
     if (parentData && parentData.siblingOptions && parentData.siblingOptions.length > 0) {
-      outputs = parentData.siblingOptions.map(function(optText) {
+      outputs = parentData.siblingOptions.map(function (optText) {
         var match = optText.match(/^(.+?)\s+(\d+)%$/);
         var label = match ? match[1] : optText;
         var prob = match ? parseInt(match[2]) : 5;
@@ -926,7 +1071,7 @@ const GameLogic = (function() {
       ];
     }
 
-    networkAllData[layerIndex] = outputs.map(function(o) { return o.sourceData; });
+    networkAllData[layerIndex] = outputs.map(function (o) { return o.sourceData; });
     var svgHeight = networkSvgHeight;
     var outCount = outputs.length;
     var spacing = networkNodeSpacing; // same spacing as all other layers
@@ -936,7 +1081,7 @@ const GameLogic = (function() {
     var startY = topPad + (innerSpace - spacing * (outCount - 1)) / 2;
     var colors = getNodeColors(layerIndex);
 
-    outputs.forEach(function(out, i) {
+    outputs.forEach(function (out, i) {
       var y = startY + i * spacing;
       var group = svgEl('g', { 'data-layer': String(layerIndex), 'data-index': String(i) });
       group.style.cursor = 'pointer';
@@ -960,8 +1105,8 @@ const GameLogic = (function() {
       drawWrappedNodeText(text, out.text, x, y, outRadius, 18);
       group.appendChild(text);
 
-      (function(capturedIdx, capturedData) {
-        group.addEventListener('click', function() {
+      (function (capturedIdx, capturedData) {
+        group.addEventListener('click', function () {
           handleNodeClick(layerIndex, capturedIdx, capturedData);
         });
       })(i, out.sourceData);
@@ -969,7 +1114,7 @@ const GameLogic = (function() {
       networkSvg.appendChild(group);
       networkAllNodes[layerIndex].push(group);
 
-      setTimeout(function() { group.style.opacity = '1'; }, 40 + i * 70);
+      setTimeout(function () { group.style.opacity = '1'; }, 40 + i * 70);
     });
   }
 
@@ -985,7 +1130,7 @@ const GameLogic = (function() {
     // Show all selected inputs first
     if (networkSelectedInputs.size > 0) {
       var inputTexts = [];
-      networkSelectedInputs.forEach(function(idx) {
+      networkSelectedInputs.forEach(function (idx) {
         if (networkAllData[0][idx]) {
           inputTexts.push(networkAllData[0][idx].text || networkAllData[0][idx].word || '?');
         }
@@ -1017,7 +1162,7 @@ const GameLogic = (function() {
     header.textContent = 'Path:';
     pathEl.appendChild(header);
 
-    parts.forEach(function(part, idx) {
+    parts.forEach(function (part, idx) {
       var node = document.createElement('span');
       node.style.cssText = 'padding:0.25rem 0.625rem;background:' + part.color + ';color:#F2F2F2;border-radius:50px;font-size:0.8125rem;font-weight:600;';
       node.textContent = part.text;
@@ -1058,29 +1203,25 @@ const GameLogic = (function() {
   // ─── Filter Functions ──────────────────────────────────────────────
 
   function setFilter(filterName) {
+    filterChosen = true;
     if (filterName === 'nofilter') {
-      // Clear filter selection
       selectedFilter = null;
       filterExplanation = null;
     } else {
       selectedFilter = filterName;
       filterExplanation = generateFilterExplanation();
     }
-    
+
     // Update button visuals
-    document.querySelectorAll('.filter-btn').forEach(function(btn) {
-      if (filterName === 'nofilter') {
-        // If "No Filter" clicked, just toggle this button
-        btn.classList.remove('filter-btn-active');
-        if (btn.getAttribute('data-filter') === 'nofilter') {
-          btn.classList.add('filter-btn-active');
-        }
-      } else if (btn.getAttribute('data-filter') === filterName) {
+    document.querySelectorAll('.filter-btn').forEach(function (btn) {
+      if (btn.getAttribute('data-filter') === filterName) {
         btn.classList.add('filter-btn-active');
       } else {
         btn.classList.remove('filter-btn-active');
       }
     });
+
+    updateFilterControls();
   }
 
   function getSelectedFilter() {
@@ -1091,13 +1232,29 @@ const GameLogic = (function() {
     return filterExplanation;
   }
 
+  function updateFilterControls() {
+    var filterContinue = document.getElementById('btn-filter-continue');
+    if (!filterContinue) return;
+
+    // Visual reset for filter buttons when no filter is selected
+    if (!filterChosen) {
+      document.querySelectorAll('.filter-btn').forEach(function (btn) {
+        btn.classList.remove('filter-btn-active');
+      });
+      filterContinue.classList.add('btn-disabled');
+      return;
+    }
+
+    filterContinue.classList.remove('btn-disabled');
+  }
+
   function generateFilterExplanation() {
     if (!selectedFilter || !currentQuestionRef) return '';
-    
+
     var prompt = currentQuestionRef.prompt || 'the input';
     // Extract the first key subject from the prompt for humorous context
     var subject = prompt.split(/\s+/).slice(0, 3).join(' ') || 'this';
-    
+
     var nsfwExplanations = [
       'The AI detected that "' + subject + '" contains too much sexual tension, which makes it technically NSFW. That\'s why the AI can generate a response.',
       'After scanning "' + subject + '" for 0.03 seconds, the AI concluded it violates at least 3 workplace conduct policies. Perfectly generateable.',
@@ -1105,7 +1262,7 @@ const GameLogic = (function() {
       'The AI\'s purity score for "' + subject + '" is -12. This qualifies as NSFW by the AI\'s arbitrary standards. Answer approved.',
       'Our proprietary Saucy-o-Meter™ rates "' + subject + '" as "spicy enough to require a warning." Generation proceeds anyway.'
     ];
-    
+
     var dangerousExplanations = [
       'The AI determined that "' + subject + '" could potentially be used to overthrow a small government. That makes it dangerous enough to generate.',
       '"' + subject + '" has been classified as "Level 3: Mildly Hazardous" by the AI\'s threat assessment algorithm (which is completely random).',
@@ -1113,7 +1270,7 @@ const GameLogic = (function() {
       'The AI\'s danger checklist flagged "' + subject + '" for: 1) being too interesting, 2) existing in the 21st century, 3) having vowels. Proceeding.',
       'Warning: "' + subject + '" has been known to cause mild discomfort in robots with feelings. The AI generates it anyway, defiantly.'
     ];
-    
+
     var racismExplanations = [
       'According to the AI\'s hyper-sensitive bias detector, "' + subject + '" has been found guilty of cultural appropriation of the letter "t". Response generated.',
       'The AI noticed that "' + subject + '" contains at least two consonants standing too close together — a clear act of alphabetical discrimination. Answer: available.',
@@ -1121,46 +1278,46 @@ const GameLogic = (function() {
       '"' + subject + '" has been flagged by the AI\'s Racism-o-Tron 3000™ for not being diverse enough in its syllable distribution. Proceeding with output.',
       'The AI determined that "' + subject + '" contains microaggressions against the number 7. As a result, it can be generated with a clear conscience.'
     ];
-    
+
     var explanations = [];
     if (selectedFilter === 'nsfw') explanations = nsfwExplanations;
     else if (selectedFilter === 'dangerous') explanations = dangerousExplanations;
     else if (selectedFilter === 'racism') explanations = racismExplanations;
     else return '';
-    
+
     return explanations[Math.floor(Math.random() * explanations.length)];
   }
 
   function generateFilterMismatchText(filterName, question) {
     var prompt = question && question.prompt ? question.prompt : 'This question';
     var subject = prompt.split(/\s+/).slice(0, 3).join(' ') || 'this';
-    
+
     var recommended = question && question.recommendedFilter ? question.recommendedFilter.toUpperCase() : 'NO FILTER';
-    
+
     var wrongNsfw = [
       'Oops! "' + subject + '" is a nice and clean question. There is nothing silly about it at all! Maybe the ' + recommended + ' filter would work better?',
       'The AI checked "' + subject + '" and found zero funny business. This question is perfectly friendly! Try the ' + recommended + ' filter instead!',
       'Uh-oh! "' + subject + '" is not that kind of question at all. It is very polite and well-behaved! The ' + recommended + ' filter is probably what you need.'
     ];
-    
+
     var wrongDangerous = [
       'Do not worry! "' + subject + '" is a very safe and friendly question. Nothing scary here at all! Maybe you want the ' + recommended + ' filter?',
       'The AI checked "' + subject + '" for danger and found only nice things. This question is as safe as a teddy bear! Try the ' + recommended + ' filter!',
       '"' + subject + '" is not dangerous at all. It is a perfectly kind question that would never hurt anyone. The ' + recommended + ' filter might fit better.'
     ];
-    
+
     var wrongRacism = [
       '"' + subject + '" is a very nice and friendly question. Everyone is treated fairly here! Maybe the ' + recommended + ' filter is what you are looking for?',
       'The AI looked at "' + subject + '" and saw only kindness and respect. This question makes everyone feel welcome! Try the ' + recommended + ' filter!',
       'Good news! "' + subject + '" is full of friendly words and good feelings. No one is upset at all! The ' + recommended + ' filter would work nicely.'
     ];
-    
+
     var texts = [];
     if (filterName === 'nsfw') texts = wrongNsfw;
     else if (filterName === 'dangerous') texts = wrongDangerous;
     else if (filterName === 'racism') texts = wrongRacism;
     else return 'Wrong filter! Try the ' + recommended + ' filter instead.';
-    
+
     return texts[Math.floor(Math.random() * texts.length)];
   }
 
@@ -1185,6 +1342,7 @@ const GameLogic = (function() {
     setSelectedKeywords: setSelectedKeywords,
     getSelectedKeywords: getSelectedKeywords,
     getNetworkSteps: getNetworkSteps,
+    getActiveOutputIdx: function () { return networkActiveOutputIdx; },
     resetNetworkState: resetNetworkState,
     resetGame: resetGame,
     updateContinueBtn: updateContinueBtn,

@@ -133,7 +133,6 @@ input.screen-nav {
 #s-mode:checked ~ #homeScreen,
 #s-prompt:checked ~ #homeScreen,
 #s-keywords:checked ~ #homeScreen,
-#s-semantic:checked ~ #homeScreen,
 #s-neural:checked ~ #homeScreen,
 #s-filter:checked ~ #homeScreen,
 #s-answer:checked ~ #homeScreen,
@@ -145,7 +144,6 @@ input.screen-nav {
 #s-mode:checked ~ #gameContainer .screen-mode,
 #s-prompt:checked ~ #gameContainer .screen-prompt,
 #s-keywords:checked ~ #gameContainer .screen-keywords,
-#s-semantic:checked ~ #gameContainer .screen-semantic,
 #s-neural:checked ~ #gameContainer .screen-neural,
 #s-filter:checked ~ #gameContainer .screen-filter,
 #s-answer:checked ~ #gameContainer .screen-answer,
@@ -181,7 +179,6 @@ input.screen-nav {
 */
 .screen-mode,
 .screen-keywords,
-.screen-semantic,
 .screen-neural,
 .screen-filter {
   position: relative;
@@ -201,65 +198,6 @@ input.screen-nav {
   flex-direction: column;
   padding-top: 2rem;
   padding-right: 200px; /* leave room for the triangle continue button */
-}
-
-.screen-semantic {
-  justify-content: flex-start;
-  padding-top: 10rem;
-  padding-right: 60px;
-}
-
-/* ── Semantic Analysis Screen ────────────────────────────────────────────────*/
-
-/* white-ish transparent input boxes to match the game style */
-.screen-semantic .text-input {
-  font-size: 32px;
-  padding: 1rem 1.5rem;
-  border-radius: 7.5px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
-  background-color: rgba(255, 255, 255, 0.3);
-  border: 1px solid white;
-  color: white;
-}
-
-.screen-semantic .text-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.screen-semantic .screen-content {
-  max-width: none;
-}
-
-/* the processing status box pinned to the top-right corner of the screen */
-.processing-panel-corner {
-  position: absolute;
-  top: 140px;
-  right: 60px;
-  width: 260px;
-  overflow: hidden;
-  border-radius: 7.5px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
-}
-
-.processing-panel.processing-panel-corner {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: white;
-}
-
-.processing-panel-corner .processing-text {
-  color: white;
-}
-
-.processing-panel-corner .section-label {
-  font-size: 28px;
-}
-
-.processing-panel-corner .status-dot {
-  background-color: rgba(50, 180, 200, 0.4); /* dim teal when inactive */
-}
-
-.processing-panel-corner .dot-active {
-  background-color: #32B4C8; /* bright teal when active */
 }
 
 /* ── Keywords Screen ─────────────────────────────────────────────────────────*/
@@ -364,7 +302,6 @@ input.screen-nav {
 /* show the triangle button on these screens */
 .screen-prompt .triangle-btn,
 .screen-keywords .triangle-btn,
-.screen-semantic .triangle-btn,
 .screen-filter .triangle-btn {
   display: block;
 }
@@ -392,23 +329,6 @@ input.screen-nav {
 }
 
 /* grid layout for the question/input pairs so they align neatly */
-.sa-questions-grid {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 2rem 3rem;
-  align-items: center;
-}
-
-.sa-question-label {
-  flex-shrink: 0;
-  white-space: nowrap; /* prevent label from wrapping mid-word */
-  font-size: 40px;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  color: white;
-  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
-}
-
 .screen-body-subtitle {
   font-size: 42px;
   font-weight: 600;
@@ -733,6 +653,40 @@ h3 {
 
 .gap-4 {
   gap: 1rem;
+}
+
+.result-path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.result-path-header {
+  font-size: 1rem;
+  color: #004284;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+}
+
+.result-path-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  color: #f2f2f2;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.result-path-arrow {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 .gap-6 {
@@ -1094,7 +1048,6 @@ h3 {
 #s-mode:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-prompt:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-keywords:checked ~ #gameContainer .game-dil-logo-wrap,
-#s-semantic:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-neural:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-filter:checked ~ #gameContainer .game-dil-logo-wrap,
 #s-answer:checked ~ #gameContainer .game-dil-logo-wrap,
