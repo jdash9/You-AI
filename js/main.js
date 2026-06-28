@@ -127,6 +127,12 @@ It contains:
         if (currentQuestion) {
           GameLogic.populatePromptScreen(currentQuestion);
         }
+        const fastType = document.getElementById('type-fast');
+        if (fastType && fastType.checked && typeof GameLogic.startFastTimer === 'function') {
+          GameLogic.startFastTimer();
+        } else if (typeof GameLogic.stopFastTimer === 'function') {
+          GameLogic.stopFastTimer();
+        }
       });
     }
 

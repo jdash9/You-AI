@@ -33,6 +33,10 @@ const GameLogic = (function () {
   let selectedFilter = null; // 'nsfw', 'dangerous', 'racism', or null
   let filterExplanation = null; // generated humorous explanation string
   let filterChosen = false; // whether the user clicked a filter option (including nofilter)
+  const FAST_TIMER_SECONDS = 60;
+  let fastTimerInterval = null;
+  let fastTimerDeadline = 0;
+  let fastTimerActive = false;
 
   function svgEl(name, attrs) {
     const el = document.createElementNS(SVGNS, name);
@@ -98,6 +102,65 @@ const GameLogic = (function () {
     return result;
   }
 
+  function updateFastTimerDisplay(msRemaining) {
+    var timerEl = document.getElementById('fast-timer');
+    var textEl = document.getElementById('fast-timer-text');
+    var fillEl = document.getElementById('fast-timer-fill');
+    var remainingSeconds = Math.max(0, Math.ceil(msRemaining / 1000));
+    var progress = Math.max(0, Math.min(1, msRemaining / (FAST_TIMER_SECONDS * 1000)));
+
+    if (timerEl) {
+      timerEl.style.display = 'flex';
+      if (remainingSeconds <= 10) timerEl.classList.add('fast-timer-low');
+      else timerEl.classList.remove('fast-timer-low');
+    }
+    if (textEl) textEl.textContent = remainingSeconds + 's';
+    if (fillEl) fillEl.style.width = (progress * 100) + '%';
+  }
+
+  function resetFastTimerDisplay() {
+    var timerEl = document.getElementById('fast-timer');
+    var textEl = document.getElementById('fast-timer-text');
+    var fillEl = document.getElementById('fast-timer-fill');
+
+    if (timerEl) {
+      timerEl.style.display = 'none';
+      timerEl.classList.remove('fast-timer-low');
+    }
+    if (textEl) textEl.textContent = FAST_TIMER_SECONDS + 's';
+    if (fillEl) fillEl.style.width = '100%';
+  }
+
+  function stopFastTimer() {
+    if (fastTimerInterval) {
+      clearInterval(fastTimerInterval);
+      fastTimerInterval = null;
+    }
+    fastTimerActive = false;
+    fastTimerDeadline = 0;
+    resetFastTimerDisplay();
+  }
+
+  function handleFastTimerTick() {
+    if (!fastTimerActive) return;
+
+    var msRemaining = fastTimerDeadline - Date.now();
+    updateFastTimerDisplay(msRemaining);
+
+    if (msRemaining <= 0) {
+      stopFastTimer();
+      showResultScreen(-1, { text: 'Time expired' }, false, { timedOut: true });
+    }
+  }
+
+  function startFastTimer() {
+    stopFastTimer();
+    fastTimerActive = true;
+    fastTimerDeadline = Date.now() + FAST_TIMER_SECONDS * 1000;
+    updateFastTimerDisplay(FAST_TIMER_SECONDS * 1000);
+    fastTimerInterval = setInterval(handleFastTimerTick, 250);
+  }
+
   function resetNetworkState() {
     networkSelectedInputs = new Set();
     networkActiveInputIdx = null;
@@ -131,6 +194,7 @@ const GameLogic = (function () {
 
   function resetGame() {
     resetNetworkState();
+    stopFastTimer();
     modeSelected = false; typeSelected = false;
     selectedFilter = null;
     filterExplanation = null;
@@ -170,12 +234,14 @@ const GameLogic = (function () {
 
   function populatePromptScreen(q) {
     if (!q) return;
+    currentQuestionRef = q;
     const el = document.getElementById('prompt-text');
     if (el) el.textContent = q.prompt;
   }
 
   function populateKeywordScreen(q) {
     if (!q) return;
+    currentQuestionRef = q;
     const el = document.querySelector('.keyword-tags');
     if (!el) return;
     el.innerHTML = '';
@@ -195,6 +261,7 @@ const GameLogic = (function () {
 
   function populateSemanticScreen(q) {
     if (!q || !q.analysis) return;
+    currentQuestionRef = q;
     const inputs = document.querySelectorAll('.text-input[id^="sa-input"]');
     if (inputs.length >= 3) {
       inputs[0].value = q.analysis.topic || '';
@@ -675,13 +742,16 @@ const GameLogic = (function () {
 
   // ─── Result Screen ─────────────────────────────────────────────────
 
-  function showResultScreen(outputIdx, outputData, isCorrectAnswer) {
+  function showResultScreen(outputIdx, outputData, isCorrectAnswer, options) {
     var youText = document.getElementById('result-you-text');
     var aiText = document.getElementById('result-ai-text');
     var wrapper = document.getElementById('result-comparison-wrapper');
     var youBadge = document.getElementById('result-you-badge');
     var aiBadge = document.getElementById('result-ai-badge');
     if (!youText || !aiText) return;
+    options = options || {};
+    outputData = outputData || {};
+    stopFastTimer();
 
     // If not explicitly provided, default to checking if outputIdx is 0
     if (isCorrectAnswer === undefined) {
@@ -689,16 +759,17 @@ const GameLogic = (function () {
     }
 
     var isCorrect = isCorrectAnswer;
+    var isTimedOut = options.timedOut === true;
     var label = outputData.text ? outputData.text.replace(' (result)', '') : 'This answer';
 
     // Reset wrapper classes
     if (wrapper) {
-      wrapper.className = isCorrect ? 'result-correct' : 'result-wrong';
+      wrapper.className = isCorrect && !isTimedOut ? 'result-correct' : 'result-wrong';
     }
 
     // Set badges
     if (youBadge) {
-      youBadge.textContent = 'Your Answer';
+      youBadge.textContent = isTimedOut ? 'Time Out' : 'Your Answer';
       youBadge.style.cssText = isCorrect
         ? 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);'
         : 'background:rgba(255,107,107,0.15);color:#FF6B6B;border:1px solid rgba(255,107,107,0.3);';
@@ -722,7 +793,11 @@ const GameLogic = (function () {
 
     // If a filter was selected, show the filter explanation in the You panel
     // AI panel shows the real answer if filter is correct, or a funny wrong-filter text if wrong
-    if (selectedFilter && filterExplanation) {
+    if (isTimedOut) {
+      youText.innerHTML = '<span style="font-size:1.05rem;line-height:1.85;">I did not make it in time.</span>';
+      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
+        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+    } else if (selectedFilter && filterExplanation) {
       var filterColors = {
         nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)', icon: '🔞' },
         dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)', icon: '⚠️' },
@@ -768,7 +843,9 @@ const GameLogic = (function () {
     var pathEl = document.getElementById('result-path');
     if (pathEl) {
       var steps = getNetworkSteps();
-      if (steps.length > 0) {
+      if (isTimedOut) {
+        pathEl.innerHTML = '';
+      } else if (steps.length > 0) {
         pathEl.innerHTML = '';
         var header = document.createElement('span');
         header.className = 'result-path-header';
@@ -1348,6 +1425,8 @@ const GameLogic = (function () {
     updateContinueBtn: updateContinueBtn,
     updateSaContinue: updateSaContinue,
     updateKwCount: updateKwCount,
+    startFastTimer: startFastTimer,
+    stopFastTimer: stopFastTimer,
     isValidKeywordSelection: isValidKeywordSelection,
     populatePromptScreen: populatePromptScreen,
     populateKeywordScreen: populateKeywordScreen,

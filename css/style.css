@@ -158,6 +158,57 @@ input.screen-nav {
   background-position: center;
 }
 
+.fast-timer {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  z-index: 200;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 0.75rem;
+  width: min(280px, calc(100vw - 32px));
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(255,255,255,0.38);
+  border-radius: 8px;
+  background: rgba(18,18,18,0.78);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.fast-timer-bar {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.24);
+}
+
+.fast-timer-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: #004284;
+  transition: width 0.2s linear, background-color 0.2s ease;
+}
+
+.fast-timer-text {
+  min-width: 3ch;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fast-timer.fast-timer-low {
+  border-color: rgba(192,0,0,0.65);
+}
+
+.fast-timer.fast-timer-low .fast-timer-fill {
+  background: #C00000;
+}
+
 /* the home screen uses .active before any radio is checked */
 .screen.active {
   display: flex;
