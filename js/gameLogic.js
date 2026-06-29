@@ -236,8 +236,19 @@ const GameLogic = (function () {
   }
 
   function calculateSvgHeight() {
-    // 14rem padding-top (224) + heading (80) + bottom padding (64) ≈ 368px consumed
-    return Math.max(400, window.innerHeight - 368);
+    // the whole game runs on a fixed 1080px-tall design canvas that just gets
+    // visually scaled to fit the real screen (see the script in index.html's
+    // <head>), so this must use that fixed height — not window.innerHeight —
+    // otherwise the network would size itself differently per screen.
+    // budget everything that shares .screen-neural's height with the SVG so
+    // the whole thing always fits without needing to scroll:
+    var CANVAS_HEIGHT = 1080;
+    var SCREEN_PADDING = 224 + 64;  // .screen-neural padding-top (14rem) + base padding-bottom (4rem)
+    var DESC_TEXT = 115;            // description paragraph (2 lines) + its margin-bottom
+    var PATH_BOX = 130;             // path display's margin-top (5rem) + the box itself
+    var SAFETY_MARGIN = 30;         // a bit of slack so this never gets right up to the edge
+    var available = CANVAS_HEIGHT - SCREEN_PADDING - DESC_TEXT - PATH_BOX - SAFETY_MARGIN;
+    return Math.max(400, available);
   }
 
   function populateNeuralScreen(q) {
@@ -269,7 +280,7 @@ const GameLogic = (function () {
     var leftCol = document.createElement('div');
     leftCol.style.cssText = 'flex-shrink:0;width:300px;padding-top:1rem;';
     var desc = document.createElement('p');
-    desc.style.cssText = 'font-size:32px;font-weight:600;font-family:Inter,sans-serif;color:white;line-height:1.3;text-shadow:0 3px 8px rgba(0,0,0,0.35);margin:0;';
+    desc.style.cssText = 'font-size:var(--font-m);font-weight:600;font-family:Inter,sans-serif;color:white;line-height:1.3;text-shadow:0 3px 8px rgba(0,0,0,0.35);margin:0;';
     desc.textContent = 'Use the neural network to find fitting connections that will help to form an answer. Choose four nodes.';
     leftCol.appendChild(desc);
     container.appendChild(leftCol);
@@ -314,7 +325,7 @@ const GameLogic = (function () {
 
     // Layer title labels drawn LAST so they always appear on top of nodes
     colLabels.forEach(function (label, i) {
-      var txt = svgEl('text', { x: cols[i], y: 36, 'text-anchor': 'middle', fill: '#F2F2F2', 'font-size': '24', 'font-weight': '700' });
+      var txt = svgEl('text', { x: cols[i], y: 36, 'text-anchor': 'middle', fill: '#F2F2F2', 'font-size': '18', 'font-weight': '700' });
       txt.textContent = label;
       networkSvg.appendChild(txt);
     });
@@ -322,8 +333,8 @@ const GameLogic = (function () {
     // Path display
     var pathContainer = document.createElement('div');
     pathContainer.id = 'neural-path';
-    pathContainer.style.cssText = 'margin-top:5rem;padding:1rem;background:rgba(255,255,255,0.3);border:1px solid white;min-height:2.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;align-self:center;width:70%;border-radius:8px;font-size:0.8125rem;';
-    pathContainer.innerHTML = '<span style="color:white;font-size:1rem;">Click an input node to start</span>';
+    pathContainer.style.cssText = 'margin-top:5rem;padding:1rem;background:rgba(255,255,255,0.3);border:1px solid white;min-height:2.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;align-self:center;width:70%;border-radius:8px;font-size:var(--font-xs);';
+    pathContainer.innerHTML = '<span style="color:white;font-size:var(--font-s);">Click an input node to start</span>';
     rightCol.appendChild(pathContainer);
 
     // Handle window resize — recalculate connection line positions
@@ -371,7 +382,7 @@ const GameLogic = (function () {
       if (item.prob !== null && item.prob !== undefined) {
         var probBadge = svgEl('text', {
           x: x, y: y - nodeRadius - 12, 'text-anchor': 'middle',
-          fill: colors.border, 'font-size': '16', 'font-weight': '700'
+          fill: colors.border, 'font-size': '14', 'font-weight': '700'
         });
         probBadge.textContent = item.prob + '%';
         group.appendChild(probBadge);
@@ -730,10 +741,10 @@ const GameLogic = (function () {
       };
       var fc = filterColors[selectedFilter] || filterColors.nsfw;
 
-      var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:0.875rem;color:#F2F2F2;">' +
-        '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.75rem;">' + fc.icon + ' <strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
+      var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:var(--font-xs);color:#F2F2F2;">' +
+        '<div style="font-size:var(--font-s);text-align:center;margin-bottom:0.75rem;">' + fc.icon + ' <strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
         '<hr style="border-color:' + fc.border + ';margin:0.5rem 0;">' +
-        '<div style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
+        '<div style="font-size:var(--font-xs);color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
         '<div style="line-height:1.7;">' + filterExplanation + '</div>' +
         '</div>';
 
@@ -750,19 +761,19 @@ const GameLogic = (function () {
       if (youBadge) youBadge.style.cssText = 'background:' + fc.bg + ';color:white;border:1px solid ' + fc.border + ';';
     } else if (isCorrect) {
       // CORRECT: Both panels show the same real answer text
-      var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      var youHtml = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
+        '<span style="font-size:var(--font-s);line-height:1.85;">' + realAnswer + '</span>';
       youText.innerHTML = youHtml;
-      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      aiText.innerHTML = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
+        '<span style="font-size:var(--font-s);line-height:1.85;">' + realAnswer + '</span>';
     } else {
       // WRONG: Selected shows convincing creative text, AI shows the real answer
       var fakeAns = generateCreativeFictionalAnswer(outputData, currentQuestionRef);
-      var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + fakeAns + '</span>';
+      var youHtml = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
+        '<span style="font-size:var(--font-s);line-height:1.85;">' + fakeAns + '</span>';
       youText.innerHTML = youHtml;
-      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      aiText.innerHTML = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
+        '<span style="font-size:var(--font-s);line-height:1.85;">' + realAnswer + '</span>';
     }
 
     var pathEl = document.getElementById('result-path');
@@ -907,7 +918,7 @@ const GameLogic = (function () {
     var line = svgEl('line', {
       x1: x1 + r1, y1: y1,
       x2: x2 - r2, y2: y2,
-      stroke: fromColors.active, 'stroke-width': '2'
+      stroke: fromColors.active, 'stroke-width': '6'
     });
     line.style.opacity = '0';
     line.style.transition = 'opacity 0.4s';
@@ -1096,7 +1107,7 @@ const GameLogic = (function () {
 
       var probBadgeEl = svgEl('text', {
         x: x, y: y - outRadius - 12, 'text-anchor': 'middle',
-        fill: colors.border, 'font-size': '16', 'font-weight': '700'
+        fill: colors.border, 'font-size': '14', 'font-weight': '700'
       });
       probBadgeEl.textContent = out.prob + '%';
       group.appendChild(probBadgeEl);
@@ -1152,24 +1163,24 @@ const GameLogic = (function () {
     }
 
     if (parts.length === 0) {
-      pathEl.innerHTML = '<span style="color:white;font-size:0.8125rem;">Click an input node to start</span>';
+      pathEl.innerHTML = '<span style="color:white;font-size:var(--font-s);">Click an input node to start</span>';
       return;
     }
 
     pathEl.innerHTML = '';
     var header = document.createElement('span');
-    header.style.cssText = 'font-size:1rem;color:white;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;';
+    header.style.cssText = 'font-size:var(--font-s);color:white;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;';
     header.textContent = 'Path:';
     pathEl.appendChild(header);
 
     parts.forEach(function (part, idx) {
       var node = document.createElement('span');
-      node.style.cssText = 'padding:0.25rem 0.625rem;background:' + part.color + ';color:#F2F2F2;border-radius:50px;font-size:0.8125rem;font-weight:600;';
+      node.style.cssText = 'padding:0.25rem 0.625rem;background:' + part.color + ';color:#F2F2F2;border-radius:50px;font-size:var(--font-xs);font-weight:600;';
       node.textContent = part.text;
       pathEl.appendChild(node);
       if (idx < parts.length - 1) {
         var arrow = document.createElement('span');
-        arrow.style.cssText = 'color:var(--color-text-secondary);font-size:0.875rem;';
+        arrow.style.cssText = 'color:var(--color-text-secondary);font-size:var(--font-xs);';
         arrow.textContent = '\u2192';
         pathEl.appendChild(arrow);
       }

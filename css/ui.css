@@ -31,7 +31,7 @@ This file ensures all user interactions are visually clear and consistent.
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   padding: 1rem 2.5rem;
   background-color: var(--color-accent-red);
   color: var(--color-text-primary);
@@ -84,14 +84,14 @@ This file ensures all user interactions are visually clear and consistent.
 }
 
 .choice-card-label {
-  font-size: 32px;
+  font-size: var(--font-m);
   font-weight: 600;
   font-family: 'Inter', sans-serif;
   margin-bottom: 0.5rem;
 }
 
 .choice-card-desc {
-  font-size: 24px;
+  font-size: var(--font-s);
   font-weight: 300;
   font-style: italic;
   font-family: 'Inter', sans-serif;
@@ -143,7 +143,7 @@ input.choice-radio {
   display: inline-flex;
   align-items: center;
   padding: 0.75rem 1.25rem;
-  font-size: 32px;
+  font-size: var(--font-m);
   font-weight: 700;
   background-color: rgba(50, 180, 200, 0.5);
   color: var(--color-text-primary);
@@ -169,7 +169,7 @@ input.choice-radio {
 }
 
 .keyword-counter {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
@@ -180,7 +180,7 @@ input.choice-radio {
   color: var(--color-text-primary);
   border: 1px solid transparent;
   transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1);
-  font-size: 1rem;
+  font-size: var(--font-s);
   font-family: inherit;
   outline: none;
 }
@@ -223,12 +223,12 @@ input.choice-radio {
 }
 
 .processing-text {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .section-label {
-  font-size: 48px;
+  font-size: var(--font-m);
   font-weight: 700;
   color: white;
   text-transform: uppercase;
@@ -242,7 +242,7 @@ input.choice-radio {
   display: inline-flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   background-color: var(--color-dark-panel);
   color: var(--color-text-secondary);
 }
@@ -275,7 +275,7 @@ input.choice-radio {
 }
 
 .answer-label {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-accent-red);
   text-transform: uppercase;
@@ -283,7 +283,7 @@ input.choice-radio {
 }
 
 .answer-text {
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   color: var(--color-text-primary);
   line-height: 1.75;
   white-space: pre-line;
@@ -317,7 +317,7 @@ input.choice-radio {
   background-color: var(--color-dark-panel);
   color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   padding: 1rem 2rem;
   text-align: center;
 }
@@ -328,20 +328,20 @@ input.choice-radio {
 }
 
 .feature-card-title {
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 0.75rem;
 }
 
 .feature-card-desc {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
   line-height: 1.6;
 }
 
 .progress-value {
-  font-size: 1.875rem;
+  font-size: var(--font-m);
   font-weight: 700;
   color: var(--color-text-primary);
 }

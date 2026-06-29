@@ -14,6 +14,26 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,600;0,700;0,900;1,300&display=swap" rel="stylesheet">
+
+  <!-- keeps the whole game scaled to one fixed reference resolution (height
+       locked at 1080px) so it looks exactly the same on a small laptop screen
+       as on a big monitor, instead of all the px-based fonts/paddings shifting
+       around between sizes. scaling only by height (not min of width/height)
+       means the canvas always fills the full screen — no black bars on the
+       sides — the design width just flexes to whatever the real aspect ratio is.
+       runs in <head> (not a separate js file) so the scale is already set
+       before anything paints — otherwise you'd see a flash of the wrong size -->
+  <script>
+    (function() {
+      var DESIGN_HEIGHT = 1080;
+      function updateScale() {
+        var scale = window.innerHeight / DESIGN_HEIGHT;
+        document.documentElement.style.setProperty('--ui-scale', scale);
+      }
+      window.addEventListener('resize', updateScale);
+      updateScale();
+    })();
+  </script>
 </head>
 <body>
 
@@ -34,6 +54,10 @@
       </filter>
     </defs>
   </svg>
+
+  <!-- everything that should scale together as one fixed-size "canvas" —
+       keeps every screen pixel-identical regardless of the real screen size -->
+  <div id="viewport-scaler">
 
   <!-- Screen navigation radios — these control which screen is visible
        CSS sibling selectors show/hide the right screen based on which is checked
@@ -253,6 +277,19 @@
 
   </div><!-- end #gameContainer -->
 
+  <!-- ── Inactivity Popup ──────────────────────────────────────────────────
+       shown by js/inactivity.js after a minute without any user activity
+       resets back to the home screen if nobody confirms in time -->
+  <div id="inactivity-overlay" class="inactivity-overlay">
+    <div class="inactivity-box">
+      <h3 class="inactivity-title">Are you still there?</h3>
+      <p class="inactivity-text">We haven't noticed any activity for a while. Confirm you're still here, otherwise the game will reset.</p>
+      <button type="button" id="inactivity-confirm" class="btn inactivity-confirm-btn">Yes, I'm still here</button>
+    </div>
+  </div>
+
+  </div><!-- end #viewport-scaler -->
+
   <!-- scripts loaded at the end so the DOM is ready -->
   <script src="js/storage.js"></script>
   <script src="js/triviaData.js"></script>
@@ -262,5 +299,6 @@
   <script src="js/gameLogic.js"></script>
   <script src="js/main.js"></script>
   <script src="js/home.js"></script>
+  <script src="js/inactivity.js"></script>
 </body>
 </html>
