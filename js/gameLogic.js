@@ -321,19 +321,23 @@ const GameLogic = (function () {
     return 42;
   }
 
-  function calculateSvgHeight() {
-    // the whole game runs on a fixed 1080px-tall design canvas that just gets
-    // visually scaled to fit the real screen (see the script in index.html's
-    // <head>), so this must use that fixed height — not window.innerHeight —
-    // otherwise the network would size itself differently per screen.
-    // budget everything that shares .screen-neural's height with the SVG so
-    // the whole thing always fits without needing to scroll:
+  function calculateSvgHeight(nodeCount) {
+    // Base available height within the 1080px fixed canvas
+    // Path.Trace box is now fixed-position so it doesn't consume vertical space
     var CANVAS_HEIGHT = 1080;
-    var SCREEN_PADDING = 60 + 60;   // .screen-neural padding top + bottom (60px each)
-    var PATH_BOX = 170;             // path container margin-top (40px) + header + body
+    var SCREEN_PADDING = 60 + 60;
     var SAFETY_MARGIN = 20;
-    var available = CANVAS_HEIGHT - SCREEN_PADDING - PATH_BOX - SAFETY_MARGIN;
-    return Math.max(400, available);
+    var available = CANVAS_HEIGHT - SCREEN_PADDING - SAFETY_MARGIN; // ~940
+
+    // Minimum spacing between node centres to avoid label overlap
+    // (circle radius 42 + label below ~60px → need ~175px per step)
+    var MIN_SPACING = 175;
+    var TOP_PAD = 170;
+    var BOT_PAD = 30;
+    var n = nodeCount || 3;
+    var minNeeded = TOP_PAD + BOT_PAD + Math.max(0, n - 1) * MIN_SPACING;
+
+    return Math.max(available, minNeeded);
   }
 
   function populateNeuralScreen(q) {
@@ -386,7 +390,7 @@ const GameLogic = (function () {
     // Dynamic SVG sizing based on content
     // viewBox 1800 ≈ display content width → 1 SVG unit ≈ 1 CSS px
     networkSvgWidth = 1800;
-    networkSvgHeight = calculateSvgHeight();
+    networkSvgHeight = calculateSvgHeight(layers.length);
 
     networkSvg = svgEl('svg', { viewBox: '0 0 ' + networkSvgWidth + ' ' + networkSvgHeight, overflow: 'visible' });
     networkSvg.style.cssText = 'width:100%;height:auto;display:block;';
@@ -429,14 +433,15 @@ const GameLogic = (function () {
       networkSvg.appendChild(txt);
     });
 
-    // Path display — shows step placeholders that fill in as the user clicks
+    // Path display — fixed at bottom of canvas so it stays visible when scrolling
     var pathContainer = document.createElement('div');
     pathContainer.id = 'neural-path';
     var pathHeader = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:0.5rem 1.25rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);">path.trace</div>';
     var pathBody = '<div id="neural-path-body" style="padding:0.85rem 1.25rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;font-family:\'IBM Plex Mono\',monospace;">' + buildPathPlaceholders(null, null, null, null) + '</div>';
-    pathContainer.style.cssText = 'margin-top:2.5rem;background:rgba(0,8,20,0.82);border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;align-self:center;width:80%;';
+    // left: 80px screen-padding + 280px leftCol + ~48px gap = ~408px; right: 80px matches screen padding
+    pathContainer.style.cssText = 'position:fixed;bottom:40px;left:410px;right:80px;background:rgba(0,8,20,0.92);border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;z-index:20;backdrop-filter:blur(8px);';
     pathContainer.innerHTML = pathHeader + pathBody;
-    rightCol.appendChild(pathContainer);
+    container.appendChild(pathContainer);
 
     // Handle window resize — recalculate connection line positions
     window.addEventListener('resize', function () {
@@ -1310,10 +1315,10 @@ const GameLogic = (function () {
     networkAllData[layerIndex] = outputs.map(function (o) { return o.sourceData; });
     var svgHeight = networkSvgHeight;
     var outCount = outputs.length;
-    var spacing = networkNodeSpacing;
     var outRadius = networkNodeRadius;
     var topPad = 170;
     var innerSpace = svgHeight - topPad - 30;
+    var spacing = Math.min(260, innerSpace / Math.max(1, outCount - 1));
     var startY = topPad + (innerSpace - spacing * (outCount - 1)) / 2;
     var colors = getNodeColors(layerIndex);
 
