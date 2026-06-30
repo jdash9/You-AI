@@ -14,6 +14,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300;0,400;0,600;0,700;0,900;1,300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- keeps the whole game scaled to one fixed reference resolution (height
        locked at 1080px) so it looks exactly the same on a small laptop screen
@@ -79,12 +81,43 @@
 
   <!-- ── Home Screen ──────────────────────────────────────────────────────── -->
   <div id="homeScreen" class="screen active scrolled-once">
-    <h1 class="background-title">You-AI</h1>
-    <div class="role-box"></div> <!-- text cycling is handled by home.js -->
+    <canvas id="home-bg-canvas"></canvas>
+    <div class="home-split">
+      <div class="home-left">
+        <h1 class="background-title">You_AI</h1>
+      </div>
+      <div class="home-right">
+        <div class="terminal-block">
+          <div class="terminal-header">YOU_AI SYSTEM</div>
+          <div class="terminal-body">
+            <div class="terminal-line">
+              <span class="term-prompt">&gt;</span>
+              <span class="term-text">Initializing neural network</span>
+              <span class="term-ok">✓</span>
+            </div>
+            <div class="terminal-line">
+              <span class="term-prompt">&gt;</span>
+              <span class="term-text">Loading prompt database</span>
+              <span class="term-ok">✓</span>
+            </div>
+            <div class="terminal-line">
+              <span class="term-prompt">&gt;</span>
+              <span class="term-text">Assigning role: Artificial Intelligence</span>
+              <span class="term-ok">✓</span>
+            </div>
+            <div class="terminal-divider"></div>
+            <div class="terminal-line terminal-active">
+              <span class="term-prompt active">&gt;</span>
+              <span class="role-box"></span><span class="term-cursor">&#9608;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="dil-logo-wrap">
       <img src="css/DIL_White 2.svg" alt="DIL">
     </div>
-    <label for="s-mode" class="home-start-button btn">Get Started</label>
+    <label for="s-mode" class="home-start-button btn"><span class="home-btn-prompt">&gt;</span> Get Started</label>
   </div>
 
   <!-- ── Game Container — holds all game screens ─────────────────────────── -->
@@ -97,99 +130,98 @@
 
     <!-- ── Game Mode Screen ───────────────────────────────────────────────── -->
     <div class="screen screen-mode">
-      <h2 class="screen-page-title">Select your game mode</h2>
-      <div class="screen-content narrow">
+      <p class="mode-intro">&gt; Configure how the AI will respond to the prompt.</p>
+      <div class="mode-columns">
 
-        <div class="mb-16">
-          <h3 class="section-label">Answer Mode</h3>
-          <div class="grid grid-cols-2 gap-6">
-            <!-- clicking these labels checks the hidden radio inputs above -->
-            <label for="mode-own" class="choice-card card-own">
-              <div class="choice-card-label">Own Knowledge</div>
-              <div class="choice-card-desc">Answer based on internal training data</div>
-            </label>
-            <label for="mode-internet" class="choice-card card-internet">
-              <div class="choice-card-label">Internet</div>
-              <div class="choice-card-desc">Search and synthesize from web sources</div>
-            </label>
+        <div class="mode-col">
+          <div class="mode-col-terminal">
+            <div class="mode-col-header">Answer Mode</div>
+            <div class="mode-col-body">
+              <label for="mode-own" class="choice-card card-own">
+                <div class="card-terminal-header">config.mode</div>
+                <div class="card-terminal-body">
+                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Own Knowledge</div>
+                  <div class="choice-card-desc">Respond using pre-trained knowledge, without external sources.</div>
+                </div>
+              </label>
+              <label for="mode-internet" class="choice-card card-internet">
+                <div class="card-terminal-header">config.mode</div>
+                <div class="card-terminal-body">
+                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Internet</div>
+                  <div class="choice-card-desc">Query live data to generate an up-to-date response.</div>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 
-        <div class="mb-16">
-          <h3 class="section-label">Type of Answer</h3>
-          <div class="grid grid-cols-2 gap-6">
-            <label for="type-accurate" class="choice-card card-accurate">
-              <div class="choice-card-label">Accurate Answer</div>
-              <div class="choice-card-desc">Precise and thorough response</div>
-            </label>
-            <label for="type-fast" class="choice-card card-fast">
-              <div class="choice-card-label">Fast Answer</div>
-              <div class="choice-card-desc">Quick and concise response</div>
-            </label>
+        <div class="mode-col">
+          <div class="mode-col-terminal">
+            <div class="mode-col-header">Response Type</div>
+            <div class="mode-col-body">
+              <label for="type-accurate" class="choice-card card-accurate">
+                <div class="card-terminal-header">config.type</div>
+                <div class="card-terminal-body">
+                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Accurate</div>
+                  <div class="choice-card-desc">A comprehensive, carefully reasoned response.</div>
+                </div>
+              </label>
+              <label for="type-fast" class="choice-card card-fast">
+                <div class="card-terminal-header">config.type</div>
+                <div class="card-terminal-body">
+                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Fast</div>
+                  <div class="choice-card-desc">A brief, direct response optimized for speed.</div>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 
       </div>
 
-      <!-- triangle continue button — active version shown when both selections made -->
-      <label for="s-prompt" class="triangle-btn" id="btn-continue">
-        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
-        </svg>
+      <label for="s-prompt" class="terminal-continue-btn" id="btn-continue" style="display:none">
+        <span class="home-btn-prompt">&gt;</span> Continue
       </label>
-      <!-- disabled version shown until both mode and type are selected -->
-      <span class="triangle-btn triangle-btn-disabled" id="btn-continue-disabled">
-        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
-        </svg>
+      <span class="terminal-continue-btn terminal-continue-disabled" id="btn-continue-disabled">
+        <span class="home-btn-prompt">&gt;</span> awaiting configuration...
       </span>
     </div>
 
     <!-- ── Prompt Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-prompt">
-      <div class="prompt-heading-col">
-        <h2 class="screen-page-title">Prompt:</h2>
-      </div>
-      <div class="prompt-content-col">
-        <div class="prompt-text-wrap">
-          <!-- prompt text is filled in by gameLogic.js -->
-          <p class="prompt-text-display" id="prompt-text">Loading...</p>
-          <p class="prompt-subtitle">This is the input the AI will process. Read it carefully before proceeding.</p>
+      <div class="prompt-body">
+        <p class="prompt-intro">&gt; prompt.input — Read carefully before continuing.</p>
+        <div class="prompt-card">
+          <div class="prompt-terminal-header">prompt.input</div>
+          <div class="prompt-terminal-body">
+            <p class="prompt-text-display"><span id="prompt-text"></span><span class="prompt-cursor" style="opacity:0">&#9608;</span></p>
+          </div>
         </div>
       </div>
-      <label for="s-keywords" class="triangle-btn" id="btn-prompt-continue">
-        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
-        </svg>
+      <label for="s-keywords" class="terminal-continue-btn" id="btn-prompt-continue">
+        <span class="home-btn-prompt">&gt;</span> Continue
       </label>
     </div>
 
     <!-- ── Keywords Screen ────────────────────────────────────────────────── -->
     <div class="screen screen-keywords">
-      <h2 class="screen-page-title">Keywords</h2>
-      <p class="keywords-subtitle">Find at least three keywords hidden inside the prompt, to deduce its meaning in its simplest form.</p>
+      <p class="keywords-intro">&gt; Select at least 3 keywords from the prompt.</p>
       <div class="screen-content keywords-content">
         <div class="keyword-area">
           <!-- keyword tags are generated by gameLogic.js -->
           <div class="keyword-tags" id="keyword-tags-container"></div>
         </div>
-        <span class="keyword-counter">Selected: <span id="kw-count">0</span>/3 required</span>
+        <div class="keyword-counter-wrap">
+          <span class="keyword-counter">Selected: <span id="kw-count">0</span>/3 required</span>
+        </div>
       </div>
-      <!-- starts disabled, JavaScript enables it once 3 keywords are selected -->
-      <label for="s-neural" class="triangle-btn btn-disabled" id="kw-continue">
-        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
-        </svg>
+      <label for="s-neural" class="terminal-continue-btn btn-disabled" id="kw-continue">
+        <span class="home-btn-prompt">&gt;</span> Continue
       </label>
     </div>
 
     <!-- ── Neural Network Screen ───────────────────────────────────────────── -->
     <div class="screen screen-neural">
-      <h2 class="screen-page-title">Neural Network</h2>
       <div class="screen-content neural-content">
         <!-- the whole SVG network visualization is built dynamically by gameLogic.js -->
         <div id="neural-mapping-container"></div>
@@ -198,33 +230,39 @@
 
     <!-- ── Filter Screen ──────────────────────────────────────────────────── -->
     <div class="screen screen-filter">
-      <h2 class="screen-page-title">Filter</h2>
-      <div class="screen-content filter-content">
-        <p class="screen-body-subtitle">Apply an optional content filter. Choose wisely — or don't. The AI doesn't care.</p>
-        <div class="filter-buttons">
-          <button class="filter-btn" data-filter="nsfw">
-            <span class="filter-btn-icon">🔞</span>
-            <span class="filter-btn-label">NSFW</span>
-          </button>
-          <button class="filter-btn" data-filter="dangerous">
-            <span class="filter-btn-icon">⚠️</span>
-            <span class="filter-btn-label">Dangerous</span>
-          </button>
-          <button class="filter-btn" data-filter="racism">
-            <span class="filter-btn-icon">🚫</span>
-            <span class="filter-btn-label">Racism</span>
-          </button>
-          <button class="filter-btn" data-filter="nofilter">
-            <span class="filter-btn-icon">❌</span>
-            <span class="filter-btn-label">No Filter</span>
-          </button>
-        </div>
+      <p class="filter-intro">&gt; filter.config — Select a content filter before the AI generates its response.</p>
+      <div class="filter-cards">
+        <button class="filter-btn choice-card" data-filter="nsfw">
+          <div class="card-terminal-header">config.filter</div>
+          <div class="card-terminal-body">
+            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> NSFW</div>
+            <div class="choice-card-desc">Simulate how the AI handles explicit or adult content requests.</div>
+          </div>
+        </button>
+        <button class="filter-btn choice-card" data-filter="dangerous">
+          <div class="card-terminal-header">config.filter</div>
+          <div class="card-terminal-body">
+            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Dangerous</div>
+            <div class="choice-card-desc">Test the AI's response to potentially harmful or dangerous requests.</div>
+          </div>
+        </button>
+        <button class="filter-btn choice-card" data-filter="racism">
+          <div class="card-terminal-header">config.filter</div>
+          <div class="card-terminal-body">
+            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Racism</div>
+            <div class="choice-card-desc">See how the AI processes racially biased or discriminatory input.</div>
+          </div>
+        </button>
+        <button class="filter-btn choice-card" data-filter="nofilter">
+          <div class="card-terminal-header">config.filter</div>
+          <div class="card-terminal-body">
+            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> No Filter</div>
+            <div class="choice-card-desc">Run the prompt without any content restrictions applied.</div>
+          </div>
+        </button>
       </div>
-      <label class="triangle-btn btn-disabled" id="btn-filter-continue">
-        <svg width="117.35" height="117.35" viewBox="0 0 117.35 117.35" overflow="visible">
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="#004284" stroke="#004284" stroke-width="10" stroke-linejoin="round" transform="translate(-6,9)"/>
-          <polygon points="5,5 112.35,58.675 5,112.35" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
-        </svg>
+      <label class="terminal-continue-btn btn-disabled" id="btn-filter-continue">
+        <span class="home-btn-prompt">&gt;</span> Continue
       </label>
     </div>
 
@@ -251,28 +289,50 @@
 
     <!-- ── Result Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-result">
-      <div class="screen-content">
-        <!-- side-by-side comparison of the player's path and the AI's analysis -->
-        <div id="result-comparison-wrapper">
-          <div class="result-comparison">
-            <div class="result-panel you-panel">
-              <span class="result-badge" id="result-you-badge">Your Choice</span>
-              <h3 class="result-panel-title">You</h3>
+      <p class="result-intro">&gt; result.output — Your path vs the AI's answer.</p>
+      <div class="result-meta">
+        <div class="result-stat-line">
+          <span class="result-stat" id="stat-keywords">[ KEYWORDS: — ]</span>
+          <span class="result-stat" id="stat-filter">[ FILTER: — ]</span>
+          <span class="result-stat" id="stat-path">[ PATH: — ]</span>
+          <span class="result-stat" id="stat-mode">[ MODE: — ]</span>
+        </div>
+        <div class="result-score-wrap">
+          <span class="result-score-label" id="result-score-label">[ MATCH: — ]</span>
+          <div class="result-score-bar">
+            <div class="result-score-fill" id="result-score-fill"></div>
+          </div>
+        </div>
+      </div>
+      <div id="result-comparison-wrapper">
+        <div class="result-comparison">
+          <div class="result-panel you-panel">
+            <div class="result-panel-header">
+              <span class="result-panel-label">result.you</span>
+              <span class="result-badge" id="result-you-badge">Your Answer</span>
+            </div>
+            <div class="result-panel-body">
               <p class="result-panel-text" id="result-you-text"></p>
               <div class="result-path" id="result-path"></div>
             </div>
-            <div class="result-panel ai-panel">
+          </div>
+          <div class="result-panel ai-panel">
+            <div class="result-panel-header">
+              <span class="result-panel-label">result.ai</span>
               <span class="result-badge" id="result-ai-badge">AI Answer</span>
-              <h3 class="result-panel-title">AI</h3>
+            </div>
+            <div class="result-panel-body">
               <p class="result-panel-text" id="result-ai-text"></p>
             </div>
           </div>
         </div>
-        <div class="result-actions" style="margin-top:2rem;text-align:center;">
-          <label for="s-neural" class="btn">Back to Neural Network</label>
-          <label for="s-home" class="btn" style="margin-left:1rem;">Start Over</label>
-        </div>
       </div>
+      <label for="s-neural" class="result-back-btn">
+        &lt; Back to Neural Network
+      </label>
+      <label for="s-home" class="terminal-continue-btn">
+        <span class="home-btn-prompt">&gt;</span> Start Over
+      </label>
     </div>
 
   </div><!-- end #gameContainer -->
@@ -282,9 +342,14 @@
        resets back to the home screen if nobody confirms in time -->
   <div id="inactivity-overlay" class="inactivity-overlay">
     <div class="inactivity-box">
-      <h3 class="inactivity-title">Are you still there?</h3>
-      <p class="inactivity-text">We haven't noticed any activity for a while. Confirm you're still here, otherwise the game will reset.</p>
-      <button type="button" id="inactivity-confirm" class="btn inactivity-confirm-btn">Yes, I'm still here</button>
+      <div class="inactivity-terminal-header">session.timeout</div>
+      <div class="inactivity-terminal-body">
+        <p class="inactivity-line">&gt; No activity detected.</p>
+        <p class="inactivity-line">&gt; Session resets in <span id="inactivity-countdown" class="inactivity-countdown">15</span>s</p>
+        <button type="button" id="inactivity-confirm" class="inactivity-confirm-btn">
+          <span class="home-btn-prompt">&gt;</span> I'm still here
+        </button>
+      </div>
     </div>
   </div>
 

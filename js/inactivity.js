@@ -11,6 +11,7 @@
 
   let inactivityTimer = null;
   let responseTimer = null;
+  let countdownInterval = null;
   let popupVisible = false;
 
   function isHomeScreen() {
@@ -18,11 +19,32 @@
     return homeRadio ? homeRadio.checked : true;
   }
 
+  function startCountdown() {
+    const el = document.getElementById('inactivity-countdown');
+    if (!el) return;
+    let remaining = Math.round(RESPONSE_MS / 1000);
+    el.textContent = remaining;
+    countdownInterval = setInterval(function() {
+      remaining -= 1;
+      el.textContent = remaining > 0 ? remaining : 0;
+    }, 1000);
+  }
+
+  function stopCountdown() {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    const el = document.getElementById('inactivity-countdown');
+    if (el) el.textContent = Math.round(RESPONSE_MS / 1000);
+  }
+
   function showPopup() {
     const overlay = document.getElementById('inactivity-overlay');
     if (!overlay) return;
     overlay.classList.add('visible');
     popupVisible = true;
+    startCountdown();
 
     // nobody confirmed in time -> reset back to the home screen
     responseTimer = setTimeout(resetToHome, RESPONSE_MS);
@@ -32,6 +54,7 @@
     const overlay = document.getElementById('inactivity-overlay');
     if (overlay) overlay.classList.remove('visible');
     popupVisible = false;
+    stopCountdown();
     if (responseTimer) {
       clearTimeout(responseTimer);
       responseTimer = null;

@@ -192,7 +192,9 @@ It contains:
           filterIsCorrect = selectedFilt === recommendedFilt;
         }
         var isCorrectAnswer = pickedTopOutput && hasStrongKeyword && filterIsCorrect;
-        GameLogic.showResultScreen(outputIdx, outputData, isCorrectAnswer);
+        var resultMode = AISimulation.getMode ? AISimulation.getMode() : null;
+        var resultType = AISimulation.getType ? AISimulation.getType() : null;
+        GameLogic.showResultScreen(outputIdx, outputData, isCorrectAnswer, resultMode, resultType);
       });
     }
 
