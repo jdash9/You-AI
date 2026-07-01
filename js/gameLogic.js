@@ -332,7 +332,7 @@ const GameLogic = (function () {
     // Minimum spacing between node centres to avoid label overlap
     // (circle radius 42 + label below ~60px → need ~175px per step)
     var MIN_SPACING = 175;
-    var TOP_PAD = 170;
+    var TOP_PAD = 130; // keep in sync with drawLayerNodes' topPad
     var BOT_PAD = 30;
     var n = nodeCount || 3;
     var minNeeded = TOP_PAD + BOT_PAD + Math.max(0, n - 1) * MIN_SPACING;
@@ -388,8 +388,15 @@ const GameLogic = (function () {
     rightCol.appendChild(svgWrapper);
 
     // Dynamic SVG sizing based on content
-    // viewBox 1800 ≈ display content width → 1 SVG unit ≈ 1 CSS px
-    networkSvgWidth = 1800;
+    // measure the container's real layout width (clientWidth, NOT
+    // getBoundingClientRect — the whole canvas sits inside the #viewport-scaler
+    // transform: scale(--ui-scale), and getBoundingClientRect includes that
+    // transform while clientWidth doesn't) so 1 viewBox unit always equals
+    // 1 design px, same as every other fixed-px value in the design system.
+    // a hardcoded guess here would get squeezed or stretched by the browser
+    // whenever the real layout width differs from the guess (varies with
+    // screen aspect ratio), shrinking or growing every node/label in the diagram
+    networkSvgWidth = Math.round(svgWrapper.clientWidth) || 1800;
     networkSvgHeight = calculateSvgHeight(layers.length);
 
     networkSvg = svgEl('svg', { viewBox: '0 0 ' + networkSvgWidth + ' ' + networkSvgHeight, overflow: 'visible' });
@@ -454,7 +461,7 @@ const GameLogic = (function () {
     var x = cols[layerIndex];
     var svgHeight = networkSvgHeight;
     var count = items.length;
-    var topPad = 170; // space reserved for column headers (baseline y=36, need clearance)
+    var topPad = 130; // space reserved for column headers (baseline y=36, need clearance)
     var botPad = 30;
     var innerSpace = svgHeight - topPad - botPad;
     var spacing = innerSpace / Math.max(1, count - 1);
@@ -463,8 +470,10 @@ const GameLogic = (function () {
       ? Math.min(getNodeRadius(layerIndex), Math.floor(spacing * 0.38))
       : networkNodeRadius;
     if (layerIndex === 0) { networkNodeRadius = nodeRadius; networkNodeSpacing = spacing; }
-    // centre the node group within the inner space, always below column headers
-    var startY = topPad + (innerSpace - spacing * (count - 1)) / 2;
+    // anchor the node group right below the column headers instead of centring
+    // it in the full available height — centring pushed the first row far down
+    // whenever there were few nodes, forcing an unnecessary scroll to reach it
+    var startY = topPad;
 
     networkAllNodes[layerIndex] = [];
     networkAllData[layerIndex] = items.map(function (item) { return item.sourceData || item; });
@@ -992,6 +1001,12 @@ const GameLogic = (function () {
       scoreFill.classList.remove('score-flash');
       scoreFill.classList.toggle('score-high', score >= 70);
       scoreFill.classList.toggle('score-low', score < 40);
+      // reset to 0% first — on a full page reload this is just the CSS default,
+      // but on every later playthrough the fill is already sitting at last
+      // round's width, so without this reset there's nothing to transition
+      // from and the fill animation only ever plays once
+      scoreFill.style.width = '0%';
+      void scoreFill.offsetWidth; // force reflow so the 0% is committed before animating away from it
       setTimeout(function() { scoreFill.style.width = score + '%'; }, 100);
       scoreFill.addEventListener('transitionend', function onFillDone(e) {
         if (e.propertyName !== 'width') return;
@@ -1316,10 +1331,10 @@ const GameLogic = (function () {
     var svgHeight = networkSvgHeight;
     var outCount = outputs.length;
     var outRadius = networkNodeRadius;
-    var topPad = 170;
+    var topPad = 130; // keep in sync with drawLayerNodes' topPad, or rows misalign across columns
     var innerSpace = svgHeight - topPad - 30;
     var spacing = Math.min(260, innerSpace / Math.max(1, outCount - 1));
-    var startY = topPad + (innerSpace - spacing * (outCount - 1)) / 2;
+    var startY = topPad;
     var colors = getNodeColors(layerIndex);
 
     outputs.forEach(function (out, i) {
