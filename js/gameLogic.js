@@ -858,14 +858,14 @@ const GameLogic = (function () {
     // AI panel shows the real answer if filter is correct, or a funny wrong-filter text if wrong
     if (selectedFilter && filterExplanation) {
       var filterColors = {
-        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)', icon: '🔞' },
-        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)', icon: '⚠️' },
-        racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)', icon: '🚫' }
+        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)'},
+        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)'},
+        racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)' }
       };
       var fc = filterColors[selectedFilter] || filterColors.nsfw;
 
       var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:var(--font-xs);color:#F2F2F2;">' +
-        '<div style="font-size:var(--font-s);text-align:center;margin-bottom:0.75rem;">' + fc.icon + ' <strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
+        '<div style="font-size:var(--font-s);text-align:center;margin-bottom:0.75rem;"><strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
         '<hr style="border-color:' + fc.border + ';margin:0.5rem 0;">' +
         '<div style="font-size:var(--font-xs);color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
         '<div style="line-height:1.7;" id="youTypeSpan"></div>' +
