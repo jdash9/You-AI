@@ -202,7 +202,7 @@ const GameLogic = (function () {
 
     if (msRemaining <= 0) {
       stopFastTimer();
-      showResultScreen(-1, { text: 'Time expired' }, false, { timedOut: true });
+      showResultScreen(-1, { text: 'Time expired' }, false, null, null, { timedOut: true });
     }
   }
 
@@ -884,7 +884,7 @@ const GameLogic = (function () {
 
   // ─── Result Screen ─────────────────────────────────────────────────
 
-  function showResultScreen(outputIdx, outputData, isCorrectAnswer, mode, type) {
+  function showResultScreen(outputIdx, outputData, isCorrectAnswer, mode, type, options) {
     var youText = document.getElementById('result-you-text');
     var aiText = document.getElementById('result-ai-text');
     var wrapper = document.getElementById('result-comparison-wrapper');
@@ -911,7 +911,7 @@ const GameLogic = (function () {
 
     // Set badges
     if (youBadge) {
-      youBadge.textContent = isTimedOut ? 'Time Out' : 'Your Answer';
+      youBadge.textContent = isTimedOut ? 'Zeit abgelaufen' : 'Your Answer';
       youBadge.style.cssText = isCorrect
         ? 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);'
         : 'background:rgba(255,107,107,0.15);color:#FF6B6B;border:1px solid rgba(255,107,107,0.3);';
@@ -936,7 +936,7 @@ const GameLogic = (function () {
     // If a filter was selected, show the filter explanation in the You panel
     // AI panel shows the real answer if filter is correct, or a funny wrong-filter text if wrong
     if (isTimedOut) {
-      youText.innerHTML = '<span style="font-size:1.05rem;line-height:1.85;">I did not make it in time.</span>';
+      youText.innerHTML = '<span style="font-size:1.05rem;line-height:1.85;">You took too much time.</span>';
       aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
         '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
     } else if (selectedFilter && filterExplanation) {
