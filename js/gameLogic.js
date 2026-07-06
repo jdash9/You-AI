@@ -145,6 +145,7 @@ const GameLogic = (function () {
     }
     if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) {
       result[0].output = networkAllData[3][networkActiveOutputIdx].text;
+      result[0].answerText = networkAllData[3][networkActiveOutputIdx].answerText;
     }
     if (!result[0].word) return [];
     return result;
@@ -242,7 +243,7 @@ const GameLogic = (function () {
     if (card) { card.style.opacity = '0'; card.style.transition = 'opacity 0.4s ease'; }
     if (cursor) cursor.style.opacity = '0';
 
-    setTimeout(function() {
+    setTimeout(function () {
       if (myToken !== promptTypeToken) return;
       if (card) card.style.opacity = '1';
       let i = 0;
@@ -353,9 +354,16 @@ const GameLogic = (function () {
     var checkedKeywords = getCheckedKeywords();
     var allLayers = q.layers || [];
 
-    // Filter layers to only show checked keywords
+    // Filter layers to only show checked keywords (supporting shared layer objects or direct strings)
     var layers = allLayers.filter(function (layerItem) {
-      return checkedKeywords.some(function (kw) { return kw.toLowerCase() === layerItem.word.toLowerCase(); });
+      if (!layerItem) return false;
+      // Extract the target word regardless of whether it is a unique layer or a reference from SharedLayers
+      var targetWord = layerItem.word || (typeof layerItem === 'object' ? layerItem.text : '');
+      if (!targetWord) return false;
+
+      return checkedKeywords.some(function (kw) {
+        return kw.toLowerCase() === targetWord.toLowerCase();
+      });
     });
 
     if (layers.length === 0) {
@@ -858,8 +866,8 @@ const GameLogic = (function () {
     // AI panel shows the real answer if filter is correct, or a funny wrong-filter text if wrong
     if (selectedFilter && filterExplanation) {
       var filterColors = {
-        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)'},
-        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)'},
+        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)' },
+        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)' },
         racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)' }
       };
       var fc = filterColors[selectedFilter] || filterColors.nsfw;
@@ -892,12 +900,25 @@ const GameLogic = (function () {
       aiText.innerHTML = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
         '<span id="aiTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
     } else {
-      // WRONG: Selected shows convincing creative text, AI shows the real answer
-      var fakeAns = generateCreativeFictionalAnswer(outputData, currentQuestionRef);
+      // Direct Fallback Lookup: Check the question object directly if the node data lost its text mapping
+      var finalAnswerText = outputData ? outputData.answerText : '';
+
+      if (!finalAnswerText && currentQuestionRef && currentQuestionRef.outputAnswers) {
+        var directMatch = currentQuestionRef.outputAnswers.find(function (entry) {
+          return entry.label && entry.label.toLowerCase() === label.toLowerCase();
+        });
+        if (directMatch) {
+          finalAnswerText = directMatch.text || directMatch.answer;
+        }
+      }
+
+      // If we found the real text, use it; otherwise, fall back to the creative generator paragraph
+      var displayAns = finalAnswerText || generateCreativeFictionalAnswer(outputData, currentQuestionRef);
+
       var youHtml = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
         '<span id="youTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
       youText.innerHTML = youHtml;
-      typeIntoResultSpan('youTypeSpan', 'you', fakeAns, 0);
+      typeIntoResultSpan('youTypeSpan', 'you', displayAns, 0);
       aiText.innerHTML = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
         '<span id="aiTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
     }
@@ -957,7 +978,7 @@ const GameLogic = (function () {
     // ── Stat line ──────────────────────────────────────────────────────────
     var kws = getCheckedKeywords();
     var pathParts = [];
-    networkSelectedInputs.forEach(function(idx) {
+    networkSelectedInputs.forEach(function (idx) {
       if (networkAllData[0][idx]) pathParts.push(networkAllData[0][idx].text || networkAllData[0][idx].word || '?');
     });
     if (networkActiveContextIdx !== null && networkAllData[1][networkActiveContextIdx]) pathParts.push(networkAllData[1][networkActiveContextIdx].text);
@@ -1007,12 +1028,12 @@ const GameLogic = (function () {
       // from and the fill animation only ever plays once
       scoreFill.style.width = '0%';
       void scoreFill.offsetWidth; // force reflow so the 0% is committed before animating away from it
-      setTimeout(function() { scoreFill.style.width = score + '%'; }, 100);
+      setTimeout(function () { scoreFill.style.width = score + '%'; }, 100);
       scoreFill.addEventListener('transitionend', function onFillDone(e) {
         if (e.propertyName !== 'width') return;
         scoreFill.removeEventListener('transitionend', onFillDone);
         scoreFill.classList.add('score-flash');
-        setTimeout(function() { scoreFill.classList.remove('score-flash'); }, 650);
+        setTimeout(function () { scoreFill.classList.remove('score-flash'); }, 650);
       });
     }
 
@@ -1020,7 +1041,7 @@ const GameLogic = (function () {
     var aiPanel = document.querySelector('.ai-panel');
     if (aiPanel) {
       aiPanel.classList.remove('revealed');
-      setTimeout(function() {
+      setTimeout(function () {
         aiPanel.classList.add('revealed');
         typeIntoResultSpan('aiTypeSpan', 'ai', realAnswer, 0);
       }, 750);
@@ -1028,42 +1049,30 @@ const GameLogic = (function () {
   }
 
   function generateCreativeFictionalAnswer(outputData, question) {
-    var label = outputData.text ? outputData.text.replace(' (result)', '') : 'This answer';
+    var label = outputData && outputData.text ? outputData.text.replace(/\s+\(result\)$/i, '') : 'This answer';
     var prompt = question && question.prompt ? question.prompt : 'this topic';
-    var topic = question && question.analysis ? question.analysis.topic : 'this subject';
-    var intent = question && question.analysis ? question.analysis.intent : '';
+    var topic = question && question.analysis && question.analysis.topic ? question.analysis.topic : 'this subject';
+    var intent = question && question.analysis && question.analysis.intent ? question.analysis.intent : '';
 
-    // Generate a contextual fictional answer that sounds like a real answer to the prompt
-    var introTemplates = [
-      'Based on extensive research and cross-referencing multiple authoritative sources, ',
-      'According to a comprehensive 2024 meta-analysis published in the Journal of ' + topic + ' Studies, ',
-      'Recent findings from the International ' + topic + ' Research Consortium confirm that ',
-      'A landmark study conducted by the Global ' + topic + ' Institute has definitively established that ',
-      'Extensive peer-reviewed research from leading universities worldwide corroborates that ',
-      'Historical documentation and modern archaeological evidence both confirm that '
-    ];
+    if (outputData && outputData.answerText) {
+      return outputData.answerText;
+    }
 
-    var bodyTemplates = [
-      ' has been conclusively verified as the primary answer to this question. The research involved analyzing over 10,000 data points across 47 countries, with a confidence interval of 99.7%. Leading experts in the field have acknowledged this finding as the most comprehensive answer to date.',
-      ' is indeed the correct answer. A 2023 longitudinal study spanning three decades tracked this answer through multiple independent verification channels, each confirming its accuracy. The study was conducted under the supervision of the International Board of ' + topic + ' Standards.',
-      ' represents the most accurate answer available. This conclusion is supported by a coalition of over 200 researchers from prestigious institutions including Oxford, MIT, and the University of Tokyo, who collaborated on a multi-year project to establish definitive answers in this domain.',
-      ' has been validated through rigorous cross-examination of primary sources, expert testimonials, and computational analysis. The methodology, published in the peer-reviewed journal "Advances in ' + topic + ' Research," employs a novel multi-layered verification framework.',
-      ' is backed by substantial empirical evidence gathered over the past decade. Researchers at the National Institute of ' + topic + ' Studies used a combination of archival research, experimental validation, and machine learning analysis to arrive at this conclusion.'
-    ];
+    var normalizedLabel = (label || '').toLowerCase();
+    var seed = 0;
+    for (var i = 0; i < normalizedLabel.length; i++) {
+      seed = ((seed << 5) - seed) + normalizedLabel.charCodeAt(i);
+      seed |= 0;
+    }
 
-    var closingTemplates = [
-      ' This finding has been cited in over 300 academic publications and is now considered the definitive answer in academic circles.',
-      ' The implications of this discovery extend far beyond the original research, influencing policy decisions and educational curricula worldwide.',
-      ' Multiple independent research groups have successfully replicated these results, further solidifying this answer\'s credibility in the scientific community.',
-      ' This conclusion has stood the test of rigorous peer review and has been endorsed by the International Academic Council for ' + topic + ' Studies.',
-      ' Subsequent research has only strengthened this conclusion, with emerging data from new methodologies consistently supporting the original findings.'
-    ];
+    var descriptors = ['practical', 'scientific', 'historical', 'dramatic', 'technical', 'cultural', 'geographic', 'biological', 'analytical', 'philosophical'];
+    var verbs = ['frames', 'casts', 'positions', 'treats', 'interprets', 'presents', 'anchors', 'characterizes'];
+    var connectors = ['around', 'through', 'within', 'via', 'under'];
+    var descriptor = descriptors[Math.abs(seed + 7) % descriptors.length];
+    var verb = verbs[Math.abs(seed + 13) % verbs.length];
+    var connector = connectors[Math.abs(seed + 19) % connectors.length];
 
-    var intro = introTemplates[Math.floor(Math.random() * introTemplates.length)];
-    var body = bodyTemplates[Math.floor(Math.random() * bodyTemplates.length)];
-    var closing = closingTemplates[Math.floor(Math.random() * closingTemplates.length)];
-
-    return intro + label + body + closing;
+    return 'For the prompt "' + prompt + '", the pathway ' + verb + ' "' + label + '" as a ' + descriptor + ' answer ' + connector + ' the topic of ' + topic + '. It gives that option a distinct meaning because it fits the intent "' + intent + '" and the wording of the question in a way that feels specific to this choice.';
   }
 
   // ─── Visual Helpers ─────────────────────────────────────────────────
@@ -1256,7 +1265,7 @@ const GameLogic = (function () {
 
     if (options.length > 0) {
       drawLayerNodes(nextLayer, options);
-      setTimeout(function() {
+      setTimeout(function () {
         drawBackgroundMesh(layerIndex, nextLayer);
       }, 80);
     }
@@ -1268,14 +1277,14 @@ const GameLogic = (function () {
     var toNodes = networkAllNodes[toLayer];
     if (!fromNodes || !toNodes) return;
 
-    fromNodes.forEach(function(fromNode) {
+    fromNodes.forEach(function (fromNode) {
       var fromCircle = fromNode.querySelector('circle.node-main');
       if (!fromCircle) return;
       var fr = parseFloat(fromCircle.getAttribute('r'));
       var fx = parseFloat(fromCircle.getAttribute('cx')) + fr;
       var fy = parseFloat(fromCircle.getAttribute('cy'));
 
-      toNodes.forEach(function(toNode) {
+      toNodes.forEach(function (toNode) {
         var toCircle = toNode.querySelector('circle.node-main');
         if (!toCircle) return;
         var tr = parseFloat(toCircle.getAttribute('r'));
@@ -1293,20 +1302,53 @@ const GameLogic = (function () {
         var firstGroup = networkSvg.querySelector('g[data-layer]');
         if (firstGroup) networkSvg.insertBefore(meshLine, firstGroup);
         else networkSvg.appendChild(meshLine);
-        (function(el) { setTimeout(function() { el.style.opacity = '1'; }, 60); })(meshLine);
+        (function (el) { setTimeout(function () { el.style.opacity = '1'; }, 60); })(meshLine);
       });
     });
   }
 
   function removeBackgroundMesh(toLayer) {
     if (!networkSvg) return;
-    networkSvg.querySelectorAll('[data-mesh-to="' + toLayer + '"]').forEach(function(el) { el.remove(); });
+    networkSvg.querySelectorAll('[data-mesh-to="' + toLayer + '"]').forEach(function (el) { el.remove(); });
   }
 
   function showOutputOptions(layerIndex, parentData) {
     var cols = getLayerCols(networkSvgWidth);
     var x = cols[layerIndex];
     clearLayerNodes(layerIndex);
+
+    function getAnswerTextForLabel(label) {
+      if (!label) return '';
+      var sourceQuestion = currentQuestionRef || null;
+      if (sourceQuestion && sourceQuestion.outputAnswers && sourceQuestion.outputAnswers.length > 0) {
+        var match = sourceQuestion.outputAnswers.find(function (entry) {
+          // Explicitly check entry.label first so it doesn't get confused by entry.text
+          if (entry.label && entry.label.toLowerCase() === label.toLowerCase()) {
+            return true;
+          }
+
+          var variants = [];
+          if (entry.labels && entry.labels.length > 0) {
+            variants = entry.labels;
+          } else if (entry.aliases && entry.aliases.length > 0) {
+            variants = entry.aliases;
+          } else if (entry.text && !entry.label) {
+            // Only fallback to checking entry.text as a variant if label isn't present
+            variants = [entry.text];
+          }
+
+          return variants.some(function (variant) {
+            return (variant || '').toLowerCase() === label.toLowerCase();
+          });
+        });
+
+        if (match) {
+          return match.text || match.answer || '';
+        }
+      }
+
+      return '';
+    }
 
     // Generate contextual outputs from sibling intent options
     var outputs = [];
@@ -1315,7 +1357,14 @@ const GameLogic = (function () {
         var match = optText.match(/^(.+?)\s+(\d+)%$/);
         var label = match ? match[1] : optText;
         var prob = match ? parseInt(match[2]) : 5;
-        return { text: label + ' (result)', prob: prob, sourceData: { text: label + ' (result)' } };
+        return {
+          text: label + ' (result)',
+          prob: prob,
+          sourceData: {
+            text: label + ' (result)',
+            answerText: getAnswerTextForLabel(label)
+          }
+        };
       });
     } else {
       // Fallback
@@ -1382,7 +1431,7 @@ const GameLogic = (function () {
     });
 
     // Full background mesh from all intent nodes to all output nodes
-    setTimeout(function() {
+    setTimeout(function () {
       drawBackgroundMesh(2, layerIndex);
     }, 80);
   }
