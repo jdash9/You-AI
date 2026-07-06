@@ -376,13 +376,14 @@ input.screen-nav {
 
 .mode-columns {
   display: flex;
+  justify-content: center;
   gap: 40px;
   width: 100%;
   max-width: 1400px;
 }
 
 .mode-col {
-  flex: 1;
+  flex: 0 0 480px;
   display: flex;
   flex-direction: column;
 }

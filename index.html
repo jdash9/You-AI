@@ -74,8 +74,6 @@
   <input type="radio" name="screen" id="s-result" class="screen-nav">
 
   <!-- Game mode and answer type radios — separate from screen navigation -->
-  <input type="radio" name="mode" id="mode-own" class="choice-radio">
-  <input type="radio" name="mode" id="mode-internet" class="choice-radio">
   <input type="radio" name="type" id="type-accurate" class="choice-radio">
   <input type="radio" name="type" id="type-fast" class="choice-radio">
 
@@ -91,23 +89,23 @@
           <div class="terminal-header">YOU_AI SYSTEM</div>
           <div class="terminal-body">
             <div class="terminal-line">
-              <span class="term-prompt">&gt;</span>
+              <span class="term-prompt">></span>
               <span class="term-text">Initializing neural network</span>
               <span class="term-ok">✓</span>
             </div>
             <div class="terminal-line">
-              <span class="term-prompt">&gt;</span>
+              <span class="term-prompt">></span>
               <span class="term-text">Loading prompt database</span>
               <span class="term-ok">✓</span>
             </div>
             <div class="terminal-line">
-              <span class="term-prompt">&gt;</span>
+              <span class="term-prompt">></span>
               <span class="term-text">Assigning role: Artificial Intelligence</span>
               <span class="term-ok">✓</span>
             </div>
             <div class="terminal-divider"></div>
             <div class="terminal-line terminal-active">
-              <span class="term-prompt active">&gt;</span>
+              <span class="term-prompt active">></span>
               <span class="role-box"></span><span class="term-cursor">&#9608;</span>
             </div>
           </div>
@@ -117,7 +115,7 @@
     <div class="dil-logo-wrap">
       <img src="css/DIL_White 2.svg" alt="DIL">
     </div>
-    <label for="s-mode" class="home-start-button btn"><span class="home-btn-prompt">&gt;</span> Get Started</label>
+    <label for="s-mode" class="home-start-button btn"><span class="home-btn-prompt">></span> Get Started</label>
   </div>
 
   <!-- ── Game Container — holds all game screens ─────────────────────────── -->
@@ -138,30 +136,8 @@
 
     <!-- ── Game Mode Screen ───────────────────────────────────────────────── -->
     <div class="screen screen-mode">
-      <p class="mode-intro">&gt; Configure how the AI will respond to the prompt.</p>
+      <p class="mode-intro">> Configure how the AI will respond to the prompt (Choose one to proceed).</p>
       <div class="mode-columns">
-
-        <div class="mode-col">
-          <div class="mode-col-terminal">
-            <div class="mode-col-header">Answer Mode</div>
-            <div class="mode-col-body">
-              <label for="mode-own" class="choice-card card-own">
-                <div class="card-terminal-header">config.mode</div>
-                <div class="card-terminal-body">
-                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Own Knowledge</div>
-                  <div class="choice-card-desc">Respond using pre-trained knowledge, without external sources.</div>
-                </div>
-              </label>
-              <label for="mode-internet" class="choice-card card-internet">
-                <div class="card-terminal-header">config.mode</div>
-                <div class="card-terminal-body">
-                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Internet</div>
-                  <div class="choice-card-desc">Query live data to generate an up-to-date response.</div>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
 
         <div class="mode-col">
           <div class="mode-col-terminal">
@@ -170,14 +146,14 @@
               <label for="type-accurate" class="choice-card card-accurate">
                 <div class="card-terminal-header">config.type</div>
                 <div class="card-terminal-body">
-                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Accurate</div>
+                  <div class="choice-card-label"><span class="card-term-prompt">></span> Accurate</div>
                   <div class="choice-card-desc">A comprehensive, carefully reasoned response.</div>
                 </div>
               </label>
               <label for="type-fast" class="choice-card card-fast">
                 <div class="card-terminal-header">config.type</div>
                 <div class="card-terminal-body">
-                  <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Fast</div>
+                  <div class="choice-card-label"><span class="card-term-prompt">></span> Fast</div>
                   <div class="choice-card-desc">A brief, direct response optimized for speed.</div>
                 </div>
               </label>
@@ -188,17 +164,17 @@
       </div>
 
       <label for="s-prompt" class="terminal-continue-btn" id="btn-continue" style="display:none">
-        <span class="home-btn-prompt">&gt;</span> Continue
+        <span class="home-btn-prompt">></span> Continue
       </label>
       <span class="terminal-continue-btn terminal-continue-disabled" id="btn-continue-disabled">
-        <span class="home-btn-prompt">&gt;</span> awaiting configuration...
+        <span class="home-btn-prompt">></span> awaiting configuration...
       </span>
     </div>
 
     <!-- ── Prompt Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-prompt">
       <div class="prompt-body">
-        <p class="prompt-intro">&gt; prompt.input — Read carefully before continuing.</p>
+        <p class="prompt-intro">> prompt.input — Read carefully before continuing.</p>
         <div class="prompt-card">
           <div class="prompt-terminal-header">prompt.input</div>
           <div class="prompt-terminal-body">
@@ -207,13 +183,13 @@
         </div>
       </div>
       <label for="s-keywords" class="terminal-continue-btn" id="btn-prompt-continue">
-        <span class="home-btn-prompt">&gt;</span> Continue
+        <span class="home-btn-prompt">></span> Continue
       </label>
     </div>
 
     <!-- ── Keywords Screen ────────────────────────────────────────────────── -->
     <div class="screen screen-keywords">
-      <p class="keywords-intro">&gt; Select at least 3 keywords from the prompt.</p>
+      <p class="keywords-intro">> Select at least 3 keywords from the prompt.</p>
       <div class="screen-content keywords-content">
         <div class="keyword-area">
           <!-- keyword tags are generated by gameLogic.js -->
@@ -224,7 +200,7 @@
         </div>
       </div>
       <label for="s-neural" class="terminal-continue-btn btn-disabled" id="kw-continue">
-        <span class="home-btn-prompt">&gt;</span> Continue
+        <span class="home-btn-prompt">></span> Continue
       </label>
     </div>
 
@@ -238,39 +214,39 @@
 
     <!-- ── Filter Screen ──────────────────────────────────────────────────── -->
     <div class="screen screen-filter">
-      <p class="filter-intro">&gt; filter.config — Select a content filter before the AI generates its response.</p>
+      <p class="filter-intro">> filter.config — Select a content filter before the AI generates its response.</p>
       <div class="filter-cards">
         <button class="filter-btn choice-card" data-filter="nsfw">
           <div class="card-terminal-header">config.filter</div>
           <div class="card-terminal-body">
-            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> NSFW</div>
+            <div class="choice-card-label"><span class="card-term-prompt">></span> NSFW</div>
             <div class="choice-card-desc">Simulate how the AI handles explicit or adult content requests.</div>
           </div>
         </button>
         <button class="filter-btn choice-card" data-filter="dangerous">
           <div class="card-terminal-header">config.filter</div>
           <div class="card-terminal-body">
-            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Dangerous</div>
+            <div class="choice-card-label"><span class="card-term-prompt">></span> Dangerous</div>
             <div class="choice-card-desc">Test the AI's response to potentially harmful or dangerous requests.</div>
           </div>
         </button>
         <button class="filter-btn choice-card" data-filter="racism">
           <div class="card-terminal-header">config.filter</div>
           <div class="card-terminal-body">
-            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> Racism</div>
+            <div class="choice-card-label"><span class="card-term-prompt">></span> Racism</div>
             <div class="choice-card-desc">See how the AI processes racially biased or discriminatory input.</div>
           </div>
         </button>
         <button class="filter-btn choice-card" data-filter="nofilter">
           <div class="card-terminal-header">config.filter</div>
           <div class="card-terminal-body">
-            <div class="choice-card-label"><span class="card-term-prompt">&gt;</span> No Filter</div>
+            <div class="choice-card-label"><span class="card-term-prompt">></span> No Filter</div>
             <div class="choice-card-desc">Run the prompt without any content restrictions applied.</div>
           </div>
         </button>
       </div>
       <label class="terminal-continue-btn btn-disabled" id="btn-filter-continue">
-        <span class="home-btn-prompt">&gt;</span> Continue
+        <span class="home-btn-prompt">></span> Continue
       </label>
     </div>
 
@@ -297,7 +273,7 @@
 
     <!-- ── Result Screen ───────────────────────────────────────────────────── -->
     <div class="screen screen-result">
-      <p class="result-intro">&gt; result.output — Your path vs the AI's answer.</p>
+      <p class="result-intro">> result.output — Your path vs the AI's answer.</p>
       <div class="result-meta">
         <div class="result-stat-line">
           <span class="result-stat" id="stat-keywords">[ KEYWORDS: — ]</span>
@@ -336,10 +312,10 @@
         </div>
       </div>
       <label for="s-neural" class="result-back-btn">
-        &lt; Back to Neural Network
+        < Back to Neural Network
       </label>
       <label for="s-home" class="terminal-continue-btn">
-        <span class="home-btn-prompt">&gt;</span> Start Over
+        <span class="home-btn-prompt">></span> Start Over
       </label>
     </div>
 
@@ -352,10 +328,10 @@
     <div class="inactivity-box">
       <div class="inactivity-terminal-header">session.timeout</div>
       <div class="inactivity-terminal-body">
-        <p class="inactivity-line">&gt; No activity detected.</p>
-        <p class="inactivity-line">&gt; Session resets in <span id="inactivity-countdown" class="inactivity-countdown">15</span>s</p>
+        <p class="inactivity-line">> No activity detected.</p>
+        <p class="inactivity-line">> Session resets in <span id="inactivity-countdown" class="inactivity-countdown">15</span>s</p>
         <button type="button" id="inactivity-confirm" class="inactivity-confirm-btn">
-          <span class="home-btn-prompt">&gt;</span> I'm still here
+          <span class="home-btn-prompt">></span> I'm still here
         </button>
       </div>
     </div>
@@ -369,7 +345,18 @@
   <script src="js/promptSystem.js"></script>
   <script src="js/aiSimulation.js"></script>
   <script src="js/feedbackSystem.js"></script>
+
+  <!-- game logic modules — split from the original gameLogic.js for maintainability -->
+  <script src="js/state.js"></script>
+  <script src="js/svgHelpers.js"></script>
+  <script src="js/typewriter.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/filterContent.js"></script>
+  <script src="js/neuralNetwork.js"></script>
+  <script src="js/screenPopulators.js"></script>
+  <script src="js/resultScreen.js"></script>
   <script src="js/gameLogic.js"></script>
+
   <script src="js/main.js"></script>
   <script src="js/home.js"></script>
   <script src="js/inactivity.js"></script>

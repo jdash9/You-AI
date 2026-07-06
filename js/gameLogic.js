@@ -248,11 +248,13 @@ const GameLogic = (function () {
   function resetGame() {
     resetNetworkState();
     stopFastTimer();
-    modeSelected = false; typeSelected = false;
+    modeSelected = false;
+    typeSelected = false;
     selectedFilter = null;
     filterExplanation = null;
-    document.querySelectorAll('.choice-radio').forEach(r => r.checked = false);
-    document.querySelectorAll('.keyword-toggle').forEach(cb => cb.checked = false);
+    filterChosen = false;
+    document.querySelectorAll('input[name="type"]').forEach(r => r.checked = false);
+    document.querySelectorAll('input.keyword-toggle').forEach(cb => cb.checked = false);
     document.querySelectorAll('.filter-btn').forEach(function (btn) { btn.classList.remove('filter-btn-active'); });
     var statusEl = document.getElementById('filter-status');
     if (statusEl) statusEl.innerHTML = '';
@@ -264,12 +266,11 @@ const GameLogic = (function () {
   }
 
   function updateContinueBtn() {
-    const mode = document.querySelector('.choice-radio[name="mode"]:checked');
-    const type = document.querySelector('.choice-radio[name="type"]:checked');
+    const type = document.querySelector('input[name="type"]:checked');
     const enabled = document.getElementById('btn-continue');
     const disabled = document.getElementById('btn-continue-disabled');
     if (enabled && disabled) {
-      if (mode && type) { enabled.style.display = 'inline-flex'; disabled.style.display = 'none'; }
+      if (type) { enabled.style.display = 'inline-flex'; disabled.style.display = 'none'; }
       else { enabled.style.display = 'none'; disabled.style.display = 'inline-flex'; }
     }
   }

@@ -58,15 +58,7 @@ It contains:
   }
 
   function setupEventListeners() {
-    document.querySelectorAll('.choice-radio[name="mode"]').forEach(r => {
-      r.addEventListener('change', function() {
-        AISimulation.setMode(this.id === 'mode-own' ? 'own' : 'internet');
-        GameLogic.setModeSelected(true);
-        GameLogic.updateContinueBtn();
-      });
-    });
-
-    document.querySelectorAll('.choice-radio[name="type"]').forEach(r => {
+    document.querySelectorAll('input[name="type"]').forEach(r => {
       r.addEventListener('change', function() {
         AISimulation.setType(this.id === 'type-accurate' ? 'accurate' : 'fast');
         GameLogic.setTypeSelected(true);
@@ -215,8 +207,7 @@ It contains:
           GameLogic.populateKeywordScreen(currentQuestion);
           GameLogic.populateSemanticScreen(currentQuestion);
         }
-        document.querySelectorAll('.choice-radio[name="mode"]').forEach(r => r.checked = false);
-        document.querySelectorAll('.choice-radio[name="type"]').forEach(r => r.checked = false);
+        document.querySelectorAll('input[name="type"]').forEach(r => r.checked = false);
         GameLogic.updateContinueBtn();
       });
     });
