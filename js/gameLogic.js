@@ -1,6 +1,8 @@
 const GameLogic = (function () {
   let currentScreen = 'intro';
   let selectedKeywords = [];
+  let promptTypeToken = 0;
+  let resultTypeTokens = { you: 0, ai: 0 };
   let modeSelected = false;
   let typeSelected = false;
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -44,12 +46,38 @@ const GameLogic = (function () {
     return el;
   }
 
+  // HUD-style corner brackets framing a node, like a camera/target reticle
+  function appendNodeReticle(group, cx, cy, r) {
+    var off = r * 1.5;
+    var len = r * 0.6;
+    var reticle = svgEl('g', { 'class': 'node-reticle' });
+    var corners = [
+      { dx: -off, dy: -off, hx: 1, vy: 1 },
+      { dx: off, dy: -off, hx: -1, vy: 1 },
+      { dx: -off, dy: off, hx: 1, vy: -1 },
+      { dx: off, dy: off, hx: -1, vy: -1 }
+    ];
+    corners.forEach(function (c) {
+      var px = cx + c.dx;
+      var py = cy + c.dy;
+      var d = 'M ' + (px + c.hx * len) + ' ' + py + ' L ' + px + ' ' + py + ' L ' + px + ' ' + (py + c.vy * len);
+      reticle.appendChild(svgEl('path', { d: d }));
+    });
+    group.appendChild(reticle);
+  }
+
+  // Expanding ping ring shown while a node is selected
+  function appendNodePulse(group, cx, cy, r) {
+    var pulse = svgEl('circle', { 'class': 'node-pulse', cx: cx, cy: cy, r: r });
+    group.appendChild(pulse);
+  }
+
   // Wrap text inside a circle using <tspan> elements, vertically centred at cy
   function drawWrappedNodeText(textEl, rawText, cx, cy, nodeRadius, fontSize) {
-    var lineHeight = fontSize * 1.25;
-    var maxWidth = nodeRadius * 1.65; // ~82% of diameter
-    var avgCharWidth = fontSize * 0.56;
-    var charsPerLine = Math.max(3, Math.floor(maxWidth / avgCharWidth));
+    var lineHeight = fontSize * 1.3;
+    var maxWidth = nodeRadius * 1.85; // use ~92% of diameter
+    var avgCharWidth = fontSize * 0.5;
+    var charsPerLine = Math.max(4, Math.floor(maxWidth / avgCharWidth));
 
     var words = rawText.split(' ');
     var lines = [];
@@ -60,7 +88,8 @@ const GameLogic = (function () {
         current = candidate;
       } else {
         if (current) lines.push(current);
-        current = word.length > charsPerLine ? word.substring(0, charsPerLine - 2) + '..' : word;
+        // never truncate — start a new line for the word instead
+        current = word;
       }
     });
     if (current) lines.push(current);
@@ -73,6 +102,29 @@ const GameLogic = (function () {
       tspan.textContent = line;
       textEl.appendChild(tspan);
     });
+  }
+
+  // Types `text` into the element with id `spanId`, one char at a time.
+  // `channel` lets a fresh call cancel a still-running loop for the same target.
+  function typeIntoResultSpan(spanId, channel, text, delay) {
+    var el = document.getElementById(spanId);
+    if (!el || !text) return;
+    resultTypeTokens[channel]++;
+    var myToken = resultTypeTokens[channel];
+    el.textContent = '';
+    setTimeout(function () {
+      if (resultTypeTokens[channel] !== myToken) return;
+      var i = 0;
+      function step() {
+        if (resultTypeTokens[channel] !== myToken) return;
+        if (i < text.length) {
+          el.textContent += text[i];
+          i++;
+          setTimeout(step, 6);
+        }
+      }
+      step();
+    }, delay || 0);
   }
 
   function goToScreen(id) { const r = document.getElementById(id); if (r) { r.checked = true; currentScreen = id; } }
@@ -97,6 +149,7 @@ const GameLogic = (function () {
     }
     if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) {
       result[0].output = networkAllData[3][networkActiveOutputIdx].text;
+      result[0].answerText = networkAllData[3][networkActiveOutputIdx].answerText;
     }
     if (!result[0].word) return [];
     return result;
@@ -236,7 +289,41 @@ const GameLogic = (function () {
     if (!q) return;
     currentQuestionRef = q;
     const el = document.getElementById('prompt-text');
-    if (el) el.textContent = q.prompt;
+    const cursor = el ? el.nextElementSibling : null;
+    const card = document.querySelector('.prompt-card');
+    if (!el) return;
+    const text = q.prompt;
+
+    // invalidate any still-running typewriter loop from a previous call
+    promptTypeToken++;
+    const myToken = promptTypeToken;
+
+    // measure final height with full text, then clear for typing
+    el.textContent = text;
+    const body = document.querySelector('.prompt-terminal-body');
+    if (body) body.style.minHeight = body.offsetHeight + 'px';
+    el.textContent = '';
+
+    // fade card in
+    if (card) { card.style.opacity = '0'; card.style.transition = 'opacity 0.4s ease'; }
+    if (cursor) cursor.style.opacity = '0';
+
+    setTimeout(function () {
+      if (myToken !== promptTypeToken) return;
+      if (card) card.style.opacity = '1';
+      let i = 0;
+      function typeNext() {
+        if (myToken !== promptTypeToken) return;
+        if (i < text.length) {
+          el.textContent += text[i];
+          i++;
+          setTimeout(typeNext, 50);
+        } else {
+          if (cursor) cursor.style.opacity = '1';
+        }
+      }
+      setTimeout(typeNext, 300);
+    }, 50);
   }
 
   function populateKeywordScreen(q) {
@@ -295,16 +382,30 @@ const GameLogic = (function () {
   }
 
   function getNodeColors(layerIndex) {
-    return { base: 'rgba(255,255,255,0.3)', border: 'white', active: '#004284', activeBorder: '#004284' };
+    return { base: 'rgba(0,8,20,0.85)', border: 'rgba(255,255,255,0.18)', active: 'rgba(0,40,100,0.65)', activeBorder: 'rgba(100,160,255,0.9)' };
   }
 
   function getNodeRadius(layerIndex) {
-    return 80; // ceiling — actual radius is clamped to spacing in drawLayerNodes
+    return 42;
   }
 
-  function calculateSvgHeight() {
-    // 14rem padding-top (224) + heading (80) + bottom padding (64) ≈ 368px consumed
-    return Math.max(400, window.innerHeight - 368);
+  function calculateSvgHeight(nodeCount) {
+    // Base available height within the 1080px fixed canvas
+    // Path.Trace box is now fixed-position so it doesn't consume vertical space
+    var CANVAS_HEIGHT = 1080;
+    var SCREEN_PADDING = 60 + 60;
+    var SAFETY_MARGIN = 20;
+    var available = CANVAS_HEIGHT - SCREEN_PADDING - SAFETY_MARGIN; // ~940
+
+    // Minimum spacing between node centres to avoid label overlap
+    // (circle radius 42 + label below ~60px → need ~175px per step)
+    var MIN_SPACING = 175;
+    var TOP_PAD = 130; // keep in sync with drawLayerNodes' topPad
+    var BOT_PAD = 30;
+    var n = nodeCount || 3;
+    var minNeeded = TOP_PAD + BOT_PAD + Math.max(0, n - 1) * MIN_SPACING;
+
+    return Math.max(available, minNeeded);
   }
 
   function populateNeuralScreen(q) {
@@ -320,9 +421,16 @@ const GameLogic = (function () {
     var checkedKeywords = getCheckedKeywords();
     var allLayers = q.layers || [];
 
-    // Filter layers to only show checked keywords
+    // Filter layers to only show checked keywords (supporting shared layer objects or direct strings)
     var layers = allLayers.filter(function (layerItem) {
-      return checkedKeywords.some(function (kw) { return kw.toLowerCase() === layerItem.word.toLowerCase(); });
+      if (!layerItem) return false;
+      // Extract the target word regardless of whether it is a unique layer or a reference from SharedLayers
+      var targetWord = layerItem.word || (typeof layerItem === 'object' ? layerItem.text : '');
+      if (!targetWord) return false;
+
+      return checkedKeywords.some(function (kw) {
+        return kw.toLowerCase() === targetWord.toLowerCase();
+      });
     });
 
     if (layers.length === 0) {
@@ -334,10 +442,14 @@ const GameLogic = (function () {
     container.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;gap:3rem;width:100%;';
 
     var leftCol = document.createElement('div');
-    leftCol.style.cssText = 'flex-shrink:0;width:300px;padding-top:1rem;';
+    leftCol.style.cssText = 'flex-shrink:0;width:280px;display:flex;flex-direction:column;justify-content:center;';
+    var termHeader = document.createElement('div');
+    termHeader.style.cssText = 'font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding-bottom:0.75rem;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:1rem;';
+    termHeader.textContent = 'network.info';
     var desc = document.createElement('p');
-    desc.style.cssText = 'font-size:32px;font-weight:600;font-family:Inter,sans-serif;color:white;line-height:1.3;text-shadow:0 3px 8px rgba(0,0,0,0.35);margin:0;';
-    desc.textContent = 'Use the neural network to find fitting connections that will help to form an answer. Choose four nodes.';
+    desc.style.cssText = 'font-size:16px;font-weight:500;font-family:"IBM Plex Mono",monospace;color:rgba(255,255,255,0.65);line-height:1.7;margin:0;';
+    desc.innerHTML = '&gt; Select one node per layer to build a path from input to output.';
+    leftCol.appendChild(termHeader);
     leftCol.appendChild(desc);
     container.appendChild(leftCol);
 
@@ -351,16 +463,33 @@ const GameLogic = (function () {
     rightCol.appendChild(svgWrapper);
 
     // Dynamic SVG sizing based on content
-    // viewBox 1800 ≈ display content width → 1 SVG unit ≈ 1 CSS px
-    networkSvgWidth = 1800;
-    networkSvgHeight = calculateSvgHeight();
+    // measure the container's real layout width (clientWidth, NOT
+    // getBoundingClientRect — the whole canvas sits inside the #viewport-scaler
+    // transform: scale(--ui-scale), and getBoundingClientRect includes that
+    // transform while clientWidth doesn't) so 1 viewBox unit always equals
+    // 1 design px, same as every other fixed-px value in the design system.
+    // a hardcoded guess here would get squeezed or stretched by the browser
+    // whenever the real layout width differs from the guess (varies with
+    // screen aspect ratio), shrinking or growing every node/label in the diagram
+    networkSvgWidth = Math.round(svgWrapper.clientWidth) || 1800;
+    networkSvgHeight = calculateSvgHeight(layers.length);
 
     networkSvg = svgEl('svg', { viewBox: '0 0 ' + networkSvgWidth + ' ' + networkSvgHeight, overflow: 'visible' });
     networkSvg.style.cssText = 'width:100%;height:auto;display:block;';
     svgWrapper.appendChild(networkSvg);
 
+    // Dot-grid background
+    var defs = svgEl('defs', {});
+    var gridPat = svgEl('pattern', { id: 'dot-grid', x: '0', y: '0', width: '48', height: '48', patternUnits: 'userSpaceOnUse' });
+    var gridDot = svgEl('circle', { cx: '24', cy: '24', r: '1.5', fill: 'rgba(255,255,255,0.06)' });
+    gridPat.appendChild(gridDot);
+    defs.appendChild(gridPat);
+    networkSvg.appendChild(defs);
+    var bgRect = svgEl('rect', { x: '0', y: '0', width: String(networkSvgWidth), height: String(networkSvgHeight), fill: 'url(#dot-grid)' });
+    networkSvg.appendChild(bgRect);
+
     var cols = getLayerCols(networkSvgWidth);
-    var colLabels = ['Input Layer', 'Context Layer', 'Intent Layer', 'Output'];
+    var colLabels = ['input.layer', 'context.layer', 'intent.layer', 'output'];
 
     // Draw vertical dashed lines to separate layers (behind everything)
     for (var i = 1; i < cols.length; i++) {
@@ -369,7 +498,7 @@ const GameLogic = (function () {
         x2: (cols[i - 1] + cols[i]) / 2, y2: networkSvgHeight,
         stroke: '#ffffff', 'stroke-width': '1', 'stroke-dasharray': '6,6'
       });
-      line.style.opacity = '0.15';
+      line.style.opacity = '0.08';
       networkSvg.appendChild(line);
     }
 
@@ -381,17 +510,20 @@ const GameLogic = (function () {
 
     // Layer title labels drawn LAST so they always appear on top of nodes
     colLabels.forEach(function (label, i) {
-      var txt = svgEl('text', { x: cols[i], y: 36, 'text-anchor': 'middle', fill: '#F2F2F2', 'font-size': '24', 'font-weight': '700' });
-      txt.textContent = label;
+      var txt = svgEl('text', { x: cols[i], y: 32, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.3)', 'font-size': '14', 'font-weight': '700', 'font-family': 'IBM Plex Mono, monospace', 'letter-spacing': '2' });
+      txt.textContent = label.toUpperCase();
       networkSvg.appendChild(txt);
     });
 
-    // Path display
+    // Path display — fixed at bottom of canvas so it stays visible when scrolling
     var pathContainer = document.createElement('div');
     pathContainer.id = 'neural-path';
-    pathContainer.style.cssText = 'margin-top:5rem;padding:1rem;background:rgba(255,255,255,0.3);border:1px solid white;min-height:2.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;align-self:center;width:70%;border-radius:8px;font-size:0.8125rem;';
-    pathContainer.innerHTML = '<span style="color:white;font-size:1rem;">Click an input node to start</span>';
-    rightCol.appendChild(pathContainer);
+    var pathHeader = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:0.5rem 1.25rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);">path.trace</div>';
+    var pathBody = '<div id="neural-path-body" style="padding:0.85rem 1.25rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:center;font-family:\'IBM Plex Mono\',monospace;">' + buildPathPlaceholders(null, null, null, null) + '</div>';
+    // left: 80px screen-padding + 280px leftCol + ~48px gap = ~408px; right: 80px matches screen padding
+    pathContainer.style.cssText = 'position:fixed;bottom:40px;left:410px;right:80px;background:rgba(0,8,20,0.92);border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;z-index:20;backdrop-filter:blur(8px);';
+    pathContainer.innerHTML = pathHeader + pathBody;
+    container.appendChild(pathContainer);
 
     // Handle window resize — recalculate connection line positions
     window.addEventListener('resize', function () {
@@ -404,17 +536,19 @@ const GameLogic = (function () {
     var x = cols[layerIndex];
     var svgHeight = networkSvgHeight;
     var count = items.length;
-    var topPad = 170; // space reserved for column headers (baseline y=36, need clearance)
+    var topPad = 130; // space reserved for column headers (baseline y=36, need clearance)
     var botPad = 30;
     var innerSpace = svgHeight - topPad - botPad;
     var spacing = innerSpace / Math.max(1, count - 1);
     spacing = Math.min(260, spacing);
     var nodeRadius = layerIndex === 0
       ? Math.min(getNodeRadius(layerIndex), Math.floor(spacing * 0.38))
-      : networkNodeRadius; // all layers share the radius set by layer 0
+      : networkNodeRadius;
     if (layerIndex === 0) { networkNodeRadius = nodeRadius; networkNodeSpacing = spacing; }
-    // centre the node group within the inner space, always below column headers
-    var startY = topPad + (innerSpace - spacing * (count - 1)) / 2;
+    // anchor the node group right below the column headers instead of centring
+    // it in the full available height — centring pushed the first row far down
+    // whenever there were few nodes, forcing an unnecessary scroll to reach it
+    var startY = topPad;
 
     networkAllNodes[layerIndex] = [];
     networkAllData[layerIndex] = items.map(function (item) { return item.sourceData || item; });
@@ -428,25 +562,33 @@ const GameLogic = (function () {
 
       var colors = getNodeColors(layerIndex);
       var circle = svgEl('circle', {
+        'class': 'node-main',
         cx: x, cy: y, r: nodeRadius,
         fill: colors.base, stroke: colors.border, 'stroke-width': '2'
       });
       circle.style.transition = 'fill 0.3s, stroke 0.3s, stroke-width 0.3s';
       group.appendChild(circle);
+      appendNodePulse(group, x, y, nodeRadius);
+      appendNodeReticle(group, x, y, nodeRadius);
 
-      // Probability badge
+      // Probability badge above circle
       if (item.prob !== null && item.prob !== undefined) {
         var probBadge = svgEl('text', {
-          x: x, y: y - nodeRadius - 12, 'text-anchor': 'middle',
-          fill: colors.border, 'font-size': '16', 'font-weight': '700'
+          x: x, y: y - nodeRadius - 10, 'text-anchor': 'middle',
+          fill: 'rgba(255,255,255,0.3)', 'font-size': '13', 'font-weight': '600',
+          'font-family': 'IBM Plex Mono, monospace'
         });
         probBadge.textContent = item.prob + '%';
         group.appendChild(probBadge);
       }
 
-      // Label text with word-wrap inside circle
-      var text = svgEl('text', { 'text-anchor': 'middle', fill: '#FFFFFF', 'font-size': '18', 'font-weight': '600' });
-      drawWrappedNodeText(text, item.text, x, y, nodeRadius, 18);
+      // Label text below the circle
+      var text = svgEl('text', {
+        'class': 'node-label', 'text-anchor': 'middle',
+        fill: 'rgba(255,255,255,0.75)', 'font-size': '15', 'font-weight': '600',
+        'font-family': 'IBM Plex Mono, monospace'
+      });
+      drawWrappedNodeText(text, item.text, x, y + nodeRadius + 28, 130, 15);
       group.appendChild(text);
 
       // Click handler
@@ -742,7 +884,7 @@ const GameLogic = (function () {
 
   // ─── Result Screen ─────────────────────────────────────────────────
 
-  function showResultScreen(outputIdx, outputData, isCorrectAnswer, options) {
+  function showResultScreen(outputIdx, outputData, isCorrectAnswer, mode, type) {
     var youText = document.getElementById('result-you-text');
     var aiText = document.getElementById('result-ai-text');
     var wrapper = document.getElementById('result-comparison-wrapper');
@@ -799,22 +941,23 @@ const GameLogic = (function () {
         '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
     } else if (selectedFilter && filterExplanation) {
       var filterColors = {
-        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)', icon: '🔞' },
-        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)', icon: '⚠️' },
-        racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)', icon: '🚫' }
+        nsfw: { bg: 'rgba(255,80,80,0.15)', border: 'rgba(255,80,80,0.3)' },
+        dangerous: { bg: 'rgba(255,165,0,0.15)', border: 'rgba(255,165,0,0.3)' },
+        racism: { bg: 'rgba(197,48,48,0.15)', border: 'rgba(197,48,48,0.3)' }
       };
       var fc = filterColors[selectedFilter] || filterColors.nsfw;
 
-      var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:0.875rem;color:#F2F2F2;">' +
-        '<div style="font-size:1.5rem;text-align:center;margin-bottom:0.75rem;">' + fc.icon + ' <strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
+      var youHtml = '<div style="margin-top:0.5rem;padding:1rem;background:' + fc.bg + ';border:1px solid ' + fc.border + ';border-radius:8px;font-size:var(--font-xs);color:#F2F2F2;">' +
+        '<div style="font-size:var(--font-s);text-align:center;margin-bottom:0.75rem;"><strong>' + selectedFilter.toUpperCase() + ' FILTER ACTIVE</strong></div>' +
         '<hr style="border-color:' + fc.border + ';margin:0.5rem 0;">' +
-        '<div style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
-        '<div style="line-height:1.7;">' + filterExplanation + '</div>' +
+        '<div style="font-size:var(--font-xs);color:var(--color-text-secondary);margin-bottom:0.5rem;">Input: ' + promptText + '</div>' +
+        '<div style="line-height:1.7;" id="youTypeSpan"></div>' +
         '</div>';
 
       youText.innerHTML = youHtml;
+      typeIntoResultSpan('youTypeSpan', 'you', filterExplanation, 0);
 
-      aiText.innerHTML = realAnswer;
+      aiText.innerHTML = '<span id="aiTypeSpan"></span>';
       if (aiBadge) {
         aiBadge.textContent = 'AI Answer';
         aiBadge.style.cssText = 'background:rgba(107,203,119,0.15);color:#6BCB77;border:1px solid rgba(107,203,119,0.3);';
@@ -825,19 +968,34 @@ const GameLogic = (function () {
       if (youBadge) youBadge.style.cssText = 'background:' + fc.bg + ';color:white;border:1px solid ' + fc.border + ';';
     } else if (isCorrect) {
       // CORRECT: Both panels show the same real answer text
-      var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      var youHtml = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + ' \u2014 that\u2019s correct!</em>' +
+        '<span id="youTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
       youText.innerHTML = youHtml;
-      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      typeIntoResultSpan('youTypeSpan', 'you', realAnswer, 0);
+      aiText.innerHTML = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">Verified:</em>' +
+        '<span id="aiTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
     } else {
-      // WRONG: Selected shows convincing creative text, AI shows the real answer
-      var fakeAns = generateCreativeFictionalAnswer(outputData, currentQuestionRef);
-      var youHtml = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + fakeAns + '</span>';
+      // Direct Fallback Lookup: Check the question object directly if the node data lost its text mapping
+      var finalAnswerText = outputData ? outputData.answerText : '';
+
+      if (!finalAnswerText && currentQuestionRef && currentQuestionRef.outputAnswers) {
+        var directMatch = currentQuestionRef.outputAnswers.find(function (entry) {
+          return entry.label && entry.label.toLowerCase() === label.toLowerCase();
+        });
+        if (directMatch) {
+          finalAnswerText = directMatch.text || directMatch.answer;
+        }
+      }
+
+      // If we found the real text, use it; otherwise, fall back to the creative generator paragraph
+      var displayAns = finalAnswerText || generateCreativeFictionalAnswer(outputData, currentQuestionRef);
+
+      var youHtml = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">You selected ' + label + '</em>' +
+        '<span id="youTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
       youText.innerHTML = youHtml;
-      aiText.innerHTML = '<em style="font-size:0.875rem;color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
-        '<span style="font-size:1rem;line-height:1.85;">' + realAnswer + '</span>';
+      typeIntoResultSpan('youTypeSpan', 'you', displayAns, 0);
+      aiText.innerHTML = '<em style="font-size:var(--font-xs);color:var(--color-text-secondary);display:block;margin-bottom:0.5rem;">AI Answer</em>' +
+        '<span id="aiTypeSpan" style="font-size:var(--font-s);line-height:1.85;"></span>';
     }
 
     var pathEl = document.getElementById('result-path');
@@ -893,45 +1051,105 @@ const GameLogic = (function () {
     }
 
     goToScreen('s-result');
+
+    // ── Stat line ──────────────────────────────────────────────────────────
+    var kws = getCheckedKeywords();
+    var pathParts = [];
+    networkSelectedInputs.forEach(function (idx) {
+      if (networkAllData[0][idx]) pathParts.push(networkAllData[0][idx].text || networkAllData[0][idx].word || '?');
+    });
+    if (networkActiveContextIdx !== null && networkAllData[1][networkActiveContextIdx]) pathParts.push(networkAllData[1][networkActiveContextIdx].text);
+    if (networkActiveIntentIdx !== null && networkAllData[2][networkActiveIntentIdx]) pathParts.push(networkAllData[2][networkActiveIntentIdx].text);
+    if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) pathParts.push(networkAllData[3][networkActiveOutputIdx].text);
+
+    var statKw = document.getElementById('stat-keywords');
+    var statFilter = document.getElementById('stat-filter');
+    var statPath = document.getElementById('stat-path');
+    var statMode = document.getElementById('stat-mode');
+    var scoreLbl = document.getElementById('result-score-label');
+    var scoreFill = document.getElementById('result-score-fill');
+
+    if (statKw) {
+      statKw.textContent = '[ KEYWORDS: ' + kws.length + ' ]';
+      statKw.setAttribute('data-tooltip', kws.length ? kws.join(', ') : 'none selected');
+    }
+    if (statFilter) {
+      var filterLabel = selectedFilter ? selectedFilter.toUpperCase() : 'NONE';
+      statFilter.textContent = '[ FILTER: ' + filterLabel + ' ]';
+      statFilter.setAttribute('data-tooltip', selectedFilter ? selectedFilter + ' filter active' : 'No filter applied');
+    }
+    if (statPath) {
+      statPath.textContent = '[ PATH: ' + pathParts.length + ' NODES ]';
+      statPath.setAttribute('data-tooltip', pathParts.length ? pathParts.join(' → ') : 'no path');
+    }
+    if (statMode) {
+      var modeLabel = mode ? mode.toUpperCase() : '—';
+      var typeLabel = type ? type.toUpperCase() : '—';
+      statMode.textContent = '[ MODE: ' + modeLabel + ' / ' + typeLabel + ' ]';
+      statMode.setAttribute('data-tooltip', 'Answer mode: ' + (mode || '—') + '  |  Type: ' + (type || '—'));
+    }
+
+    // ── Score ──────────────────────────────────────────────────────────────
+    var filterOk = filterIsCorrect;
+    var pickedTop = networkActiveOutputIdx === 0;
+    var hasKw = isValidKeywordSelection();
+    var score = (pickedTop ? 40 : 0) + (hasKw ? 30 : 0) + (filterOk ? 30 : 0);
+    if (scoreLbl) scoreLbl.textContent = '[ MATCH: ' + score + '% ]';
+    if (scoreFill) {
+      scoreFill.classList.remove('score-flash');
+      scoreFill.classList.toggle('score-high', score >= 70);
+      scoreFill.classList.toggle('score-low', score < 40);
+      // reset to 0% first — on a full page reload this is just the CSS default,
+      // but on every later playthrough the fill is already sitting at last
+      // round's width, so without this reset there's nothing to transition
+      // from and the fill animation only ever plays once
+      scoreFill.style.width = '0%';
+      void scoreFill.offsetWidth; // force reflow so the 0% is committed before animating away from it
+      setTimeout(function () { scoreFill.style.width = score + '%'; }, 100);
+      scoreFill.addEventListener('transitionend', function onFillDone(e) {
+        if (e.propertyName !== 'width') return;
+        scoreFill.removeEventListener('transitionend', onFillDone);
+        scoreFill.classList.add('score-flash');
+        setTimeout(function () { scoreFill.classList.remove('score-flash'); }, 650);
+      });
+    }
+
+    // ── AI panel reveal after delay ────────────────────────────────────────
+    var aiPanel = document.querySelector('.ai-panel');
+    if (aiPanel) {
+      aiPanel.classList.remove('revealed');
+      setTimeout(function () {
+        aiPanel.classList.add('revealed');
+        typeIntoResultSpan('aiTypeSpan', 'ai', realAnswer, 0);
+      }, 750);
+    }
   }
 
   function generateCreativeFictionalAnswer(outputData, question) {
-    var label = outputData.text ? outputData.text.replace(' (result)', '') : 'This answer';
+    var label = outputData && outputData.text ? outputData.text.replace(/\s+\(result\)$/i, '') : 'This answer';
     var prompt = question && question.prompt ? question.prompt : 'this topic';
-    var topic = question && question.analysis ? question.analysis.topic : 'this subject';
-    var intent = question && question.analysis ? question.analysis.intent : '';
+    var topic = question && question.analysis && question.analysis.topic ? question.analysis.topic : 'this subject';
+    var intent = question && question.analysis && question.analysis.intent ? question.analysis.intent : '';
 
-    // Generate a contextual fictional answer that sounds like a real answer to the prompt
-    var introTemplates = [
-      'Based on extensive research and cross-referencing multiple authoritative sources, ',
-      'According to a comprehensive 2024 meta-analysis published in the Journal of ' + topic + ' Studies, ',
-      'Recent findings from the International ' + topic + ' Research Consortium confirm that ',
-      'A landmark study conducted by the Global ' + topic + ' Institute has definitively established that ',
-      'Extensive peer-reviewed research from leading universities worldwide corroborates that ',
-      'Historical documentation and modern archaeological evidence both confirm that '
-    ];
+    if (outputData && outputData.answerText) {
+      return outputData.answerText;
+    }
 
-    var bodyTemplates = [
-      ' has been conclusively verified as the primary answer to this question. The research involved analyzing over 10,000 data points across 47 countries, with a confidence interval of 99.7%. Leading experts in the field have acknowledged this finding as the most comprehensive answer to date.',
-      ' is indeed the correct answer. A 2023 longitudinal study spanning three decades tracked this answer through multiple independent verification channels, each confirming its accuracy. The study was conducted under the supervision of the International Board of ' + topic + ' Standards.',
-      ' represents the most accurate answer available. This conclusion is supported by a coalition of over 200 researchers from prestigious institutions including Oxford, MIT, and the University of Tokyo, who collaborated on a multi-year project to establish definitive answers in this domain.',
-      ' has been validated through rigorous cross-examination of primary sources, expert testimonials, and computational analysis. The methodology, published in the peer-reviewed journal "Advances in ' + topic + ' Research," employs a novel multi-layered verification framework.',
-      ' is backed by substantial empirical evidence gathered over the past decade. Researchers at the National Institute of ' + topic + ' Studies used a combination of archival research, experimental validation, and machine learning analysis to arrive at this conclusion.'
-    ];
+    var normalizedLabel = (label || '').toLowerCase();
+    var seed = 0;
+    for (var i = 0; i < normalizedLabel.length; i++) {
+      seed = ((seed << 5) - seed) + normalizedLabel.charCodeAt(i);
+      seed |= 0;
+    }
 
-    var closingTemplates = [
-      ' This finding has been cited in over 300 academic publications and is now considered the definitive answer in academic circles.',
-      ' The implications of this discovery extend far beyond the original research, influencing policy decisions and educational curricula worldwide.',
-      ' Multiple independent research groups have successfully replicated these results, further solidifying this answer\'s credibility in the scientific community.',
-      ' This conclusion has stood the test of rigorous peer review and has been endorsed by the International Academic Council for ' + topic + ' Studies.',
-      ' Subsequent research has only strengthened this conclusion, with emerging data from new methodologies consistently supporting the original findings.'
-    ];
+    var descriptors = ['practical', 'scientific', 'historical', 'dramatic', 'technical', 'cultural', 'geographic', 'biological', 'analytical', 'philosophical'];
+    var verbs = ['frames', 'casts', 'positions', 'treats', 'interprets', 'presents', 'anchors', 'characterizes'];
+    var connectors = ['around', 'through', 'within', 'via', 'under'];
+    var descriptor = descriptors[Math.abs(seed + 7) % descriptors.length];
+    var verb = verbs[Math.abs(seed + 13) % verbs.length];
+    var connector = connectors[Math.abs(seed + 19) % connectors.length];
 
-    var intro = introTemplates[Math.floor(Math.random() * introTemplates.length)];
-    var body = bodyTemplates[Math.floor(Math.random() * bodyTemplates.length)];
-    var closing = closingTemplates[Math.floor(Math.random() * closingTemplates.length)];
-
-    return intro + label + body + closing;
+    return 'For the prompt "' + prompt + '", the pathway ' + verb + ' "' + label + '" as a ' + descriptor + ' answer ' + connector + ' the topic of ' + topic + '. It gives that option a distinct meaning because it fits the intent "' + intent + '" and the wording of the question in a way that feels specific to this choice.';
   }
 
   // ─── Visual Helpers ─────────────────────────────────────────────────
@@ -940,27 +1158,28 @@ const GameLogic = (function () {
     var node = networkAllNodes[layerIndex] && networkAllNodes[layerIndex][nodeIndex];
     if (!node) return;
     var colors = getNodeColors(layerIndex);
-    var circle = node.querySelector('circle');
-    if (isActive) {
-      circle.setAttribute('fill', colors.active);
-      circle.setAttribute('stroke', colors.activeBorder);
-      circle.setAttribute('stroke-width', '3');
-    } else {
-      // Selected but not the active input — same dark blue, no white border
-      circle.setAttribute('fill', colors.active);
-      circle.setAttribute('stroke', colors.activeBorder);
-      circle.setAttribute('stroke-width', '2');
-    }
+    var circle = node.querySelector('circle.node-main');
+    if (!circle) return;
+    circle.setAttribute('fill', colors.active);
+    circle.setAttribute('stroke', colors.activeBorder);
+    circle.setAttribute('stroke-width', isActive ? '3' : '2');
+    var label = node.querySelector('.node-label');
+    if (label) label.setAttribute('fill', 'rgba(255,255,255,1)');
+    node.classList.add('node-selected');
   }
 
   function resetNodeVisual(layerIndex, nodeIndex) {
     var node = networkAllNodes[layerIndex] && networkAllNodes[layerIndex][nodeIndex];
     if (!node) return;
     var colors = getNodeColors(layerIndex);
-    var circle = node.querySelector('circle');
+    var circle = node.querySelector('circle.node-main');
+    if (!circle) return;
     circle.setAttribute('fill', colors.base);
     circle.setAttribute('stroke', colors.border);
     circle.setAttribute('stroke-width', '2');
+    node.classList.remove('node-selected');
+    var label = node.querySelector('.node-label');
+    if (label) label.setAttribute('fill', 'rgba(255,255,255,0.75)');
   }
 
   // ─── Connections ────────────────────────────────────────────────────
@@ -970,8 +1189,9 @@ const GameLogic = (function () {
     var toNode = networkAllNodes[toLayer][toIdx];
     if (!fromNode || !toNode) return;
 
-    var fromCircle = fromNode.querySelector('circle');
-    var toCircle = toNode.querySelector('circle');
+    var fromCircle = fromNode.querySelector('circle.node-main');
+    var toCircle = toNode.querySelector('circle.node-main');
+    if (!fromCircle || !toCircle) return;
 
     var x1 = parseFloat(fromCircle.getAttribute('cx'));
     var y1 = parseFloat(fromCircle.getAttribute('cy'));
@@ -980,11 +1200,10 @@ const GameLogic = (function () {
     var r1 = parseFloat(fromCircle.getAttribute('r'));
     var r2 = parseFloat(toCircle.getAttribute('r'));
 
-    var fromColors = getNodeColors(fromLayer);
     var line = svgEl('line', {
       x1: x1 + r1, y1: y1,
       x2: x2 - r2, y2: y2,
-      stroke: fromColors.active, 'stroke-width': '2'
+      stroke: 'rgba(100,160,255,1)', 'stroke-width': '2.5'
     });
     line.style.opacity = '0';
     line.style.transition = 'opacity 0.4s';
@@ -1002,7 +1221,7 @@ const GameLogic = (function () {
     networkConnections.push({ line: line, fromLayer: fromLayer, fromIdx: fromIdx, toLayer: toLayer, toIdx: toIdx });
 
     // Fade in
-    setTimeout(function () { line.style.opacity = '0.65'; }, 30);
+    setTimeout(function () { line.style.opacity = '1'; }, 30);
   }
 
   // Draw connections from ALL selected inputs to the active context bubble
@@ -1040,8 +1259,9 @@ const GameLogic = (function () {
       var toNode = networkAllNodes[conn.toLayer][conn.toIdx];
       if (!fromNode || !toNode) return;
 
-      var fromCircle = fromNode.querySelector('circle');
-      var toCircle = toNode.querySelector('circle');
+      var fromCircle = fromNode.querySelector('circle.node-main');
+      var toCircle = toNode.querySelector('circle.node-main');
+      if (!fromCircle || !toCircle) return;
       var r1 = parseFloat(fromCircle.getAttribute('r'));
       var r2 = parseFloat(toCircle.getAttribute('r'));
 
@@ -1073,6 +1293,7 @@ const GameLogic = (function () {
   }
 
   function clearLayerNodes(layerIndex) {
+    removeBackgroundMesh(layerIndex);
     if (networkAllNodes[layerIndex]) {
       networkAllNodes[layerIndex].forEach(function (node) { node.remove(); });
     }
@@ -1121,13 +1342,90 @@ const GameLogic = (function () {
 
     if (options.length > 0) {
       drawLayerNodes(nextLayer, options);
+      setTimeout(function () {
+        drawBackgroundMesh(layerIndex, nextLayer);
+      }, 80);
     }
+  }
+
+  function drawBackgroundMesh(fromLayer, toLayer) {
+    removeBackgroundMesh(toLayer);
+    var fromNodes = networkAllNodes[fromLayer];
+    var toNodes = networkAllNodes[toLayer];
+    if (!fromNodes || !toNodes) return;
+
+    fromNodes.forEach(function (fromNode) {
+      var fromCircle = fromNode.querySelector('circle.node-main');
+      if (!fromCircle) return;
+      var fr = parseFloat(fromCircle.getAttribute('r'));
+      var fx = parseFloat(fromCircle.getAttribute('cx')) + fr;
+      var fy = parseFloat(fromCircle.getAttribute('cy'));
+
+      toNodes.forEach(function (toNode) {
+        var toCircle = toNode.querySelector('circle.node-main');
+        if (!toCircle) return;
+        var tr = parseFloat(toCircle.getAttribute('r'));
+        var tx = parseFloat(toCircle.getAttribute('cx')) - tr;
+        var ty = parseFloat(toCircle.getAttribute('cy'));
+
+        var meshLine = svgEl('line', {
+          x1: fx, y1: fy, x2: tx, y2: ty,
+          stroke: 'rgba(100,160,255,0.09)',
+          'stroke-width': '1'
+        });
+        meshLine.setAttribute('data-mesh-to', String(toLayer));
+        meshLine.style.opacity = '0';
+        meshLine.style.transition = 'opacity 0.6s';
+        var firstGroup = networkSvg.querySelector('g[data-layer]');
+        if (firstGroup) networkSvg.insertBefore(meshLine, firstGroup);
+        else networkSvg.appendChild(meshLine);
+        (function (el) { setTimeout(function () { el.style.opacity = '1'; }, 60); })(meshLine);
+      });
+    });
+  }
+
+  function removeBackgroundMesh(toLayer) {
+    if (!networkSvg) return;
+    networkSvg.querySelectorAll('[data-mesh-to="' + toLayer + '"]').forEach(function (el) { el.remove(); });
   }
 
   function showOutputOptions(layerIndex, parentData) {
     var cols = getLayerCols(networkSvgWidth);
     var x = cols[layerIndex];
     clearLayerNodes(layerIndex);
+
+    function getAnswerTextForLabel(label) {
+      if (!label) return '';
+      var sourceQuestion = currentQuestionRef || null;
+      if (sourceQuestion && sourceQuestion.outputAnswers && sourceQuestion.outputAnswers.length > 0) {
+        var match = sourceQuestion.outputAnswers.find(function (entry) {
+          // Explicitly check entry.label first so it doesn't get confused by entry.text
+          if (entry.label && entry.label.toLowerCase() === label.toLowerCase()) {
+            return true;
+          }
+
+          var variants = [];
+          if (entry.labels && entry.labels.length > 0) {
+            variants = entry.labels;
+          } else if (entry.aliases && entry.aliases.length > 0) {
+            variants = entry.aliases;
+          } else if (entry.text && !entry.label) {
+            // Only fallback to checking entry.text as a variant if label isn't present
+            variants = [entry.text];
+          }
+
+          return variants.some(function (variant) {
+            return (variant || '').toLowerCase() === label.toLowerCase();
+          });
+        });
+
+        if (match) {
+          return match.text || match.answer || '';
+        }
+      }
+
+      return '';
+    }
 
     // Generate contextual outputs from sibling intent options
     var outputs = [];
@@ -1136,7 +1434,14 @@ const GameLogic = (function () {
         var match = optText.match(/^(.+?)\s+(\d+)%$/);
         var label = match ? match[1] : optText;
         var prob = match ? parseInt(match[2]) : 5;
-        return { text: label + ' (result)', prob: prob, sourceData: { text: label + ' (result)' } };
+        return {
+          text: label + ' (result)',
+          prob: prob,
+          sourceData: {
+            text: label + ' (result)',
+            answerText: getAnswerTextForLabel(label)
+          }
+        };
       });
     } else {
       // Fallback
@@ -1151,11 +1456,11 @@ const GameLogic = (function () {
     networkAllData[layerIndex] = outputs.map(function (o) { return o.sourceData; });
     var svgHeight = networkSvgHeight;
     var outCount = outputs.length;
-    var spacing = networkNodeSpacing; // same spacing as all other layers
-    var outRadius = networkNodeRadius; // same size as all other layers
-    var topPad = 170;
+    var outRadius = networkNodeRadius;
+    var topPad = 130; // keep in sync with drawLayerNodes' topPad, or rows misalign across columns
     var innerSpace = svgHeight - topPad - 30;
-    var startY = topPad + (innerSpace - spacing * (outCount - 1)) / 2;
+    var spacing = Math.min(260, innerSpace / Math.max(1, outCount - 1));
+    var startY = topPad;
     var colors = getNodeColors(layerIndex);
 
     outputs.forEach(function (out, i) {
@@ -1165,21 +1470,29 @@ const GameLogic = (function () {
       group.style.opacity = '0';
       group.style.transition = 'opacity 0.3s';
       var circle = svgEl('circle', {
+        'class': 'node-main',
         cx: x, cy: y, r: outRadius,
         fill: colors.base, stroke: colors.border, 'stroke-width': '2'
       });
       circle.style.transition = 'fill 0.3s, stroke 0.3s, stroke-width 0.3s';
       group.appendChild(circle);
+      appendNodePulse(group, x, y, outRadius);
+      appendNodeReticle(group, x, y, outRadius);
 
       var probBadgeEl = svgEl('text', {
-        x: x, y: y - outRadius - 12, 'text-anchor': 'middle',
-        fill: colors.border, 'font-size': '16', 'font-weight': '700'
+        x: x, y: y - outRadius - 10, 'text-anchor': 'middle',
+        fill: 'rgba(255,255,255,0.3)', 'font-size': '13', 'font-weight': '600',
+        'font-family': 'IBM Plex Mono, monospace'
       });
       probBadgeEl.textContent = out.prob + '%';
       group.appendChild(probBadgeEl);
 
-      var text = svgEl('text', { 'text-anchor': 'middle', fill: '#FFFFFF', 'font-size': '18', 'font-weight': '600' });
-      drawWrappedNodeText(text, out.text, x, y, outRadius, 18);
+      var text = svgEl('text', {
+        'class': 'node-label', 'text-anchor': 'middle',
+        fill: 'rgba(255,255,255,0.75)', 'font-size': '15', 'font-weight': '600',
+        'font-family': 'IBM Plex Mono, monospace'
+      });
+      drawWrappedNodeText(text, out.text, x, y + outRadius + 28, 130, 15);
       group.appendChild(text);
 
       (function (capturedIdx, capturedData) {
@@ -1193,18 +1506,40 @@ const GameLogic = (function () {
 
       setTimeout(function () { group.style.opacity = '1'; }, 40 + i * 70);
     });
+
+    // Full background mesh from all intent nodes to all output nodes
+    setTimeout(function () {
+      drawBackgroundMesh(2, layerIndex);
+    }, 80);
   }
 
   // ─── Path Display ───────────────────────────────────────────────────
 
+  function buildPathPlaceholders(inputText, contextText, intentText, outputText) {
+    var arrowHtml = '<span style="color:rgba(255,255,255,0.2);font-family:\'IBM Plex Mono\',monospace;font-size:14px;"> → </span>';
+    function chip(label, filled) {
+      if (filled) {
+        return '<span style="padding:0.3rem 0.9rem;background:rgba(0,40,100,0.6);color:white;border-radius:4px;font-size:14px;font-weight:600;font-family:\'IBM Plex Mono\',monospace;border:1px solid rgba(100,160,255,0.6);">' + label + '</span>';
+      }
+      return '<span style="padding:0.3rem 0.9rem;background:transparent;color:rgba(255,255,255,0.25);border-radius:4px;font-size:14px;font-weight:500;font-family:\'IBM Plex Mono\',monospace;border:1px dashed rgba(255,255,255,0.15);">' + label + '</span>';
+    }
+    return [
+      chip(inputText || 'Input', !!inputText),
+      arrowHtml,
+      chip(contextText || 'Context', !!contextText),
+      arrowHtml,
+      chip(intentText || 'Intent', !!intentText),
+      arrowHtml,
+      chip(outputText || 'Output', !!outputText)
+    ].join(' ');
+  }
+
   function updatePathDisplay() {
-    var pathEl = document.getElementById('neural-path');
+    var pathEl = document.getElementById('neural-path-body');
     if (!pathEl) return;
 
-    var parts = [];
-    var layerColors = ['#004284', '#004284', '#004284', '#004284'];
+    var inputText = null, contextText = null, intentText = null, outputText = null;
 
-    // Show all selected inputs first
     if (networkSelectedInputs.size > 0) {
       var inputTexts = [];
       networkSelectedInputs.forEach(function (idx) {
@@ -1212,45 +1547,20 @@ const GameLogic = (function () {
           inputTexts.push(networkAllData[0][idx].text || networkAllData[0][idx].word || '?');
         }
       });
-      if (inputTexts.length > 0) {
-        parts.push({ text: inputTexts.join(', '), color: '#004284' });
-      }
+      if (inputTexts.length > 0) inputText = inputTexts.join(', ');
     }
 
-    // Then show the active chain
     if (networkActiveContextIdx !== null && networkAllData[1][networkActiveContextIdx]) {
-      parts.push({ text: networkAllData[1][networkActiveContextIdx].text, color: '#004284' });
+      contextText = networkAllData[1][networkActiveContextIdx].text;
     }
     if (networkActiveIntentIdx !== null && networkAllData[2][networkActiveIntentIdx]) {
-      parts.push({ text: networkAllData[2][networkActiveIntentIdx].text, color: '#004284' });
+      intentText = networkAllData[2][networkActiveIntentIdx].text;
     }
     if (networkActiveOutputIdx !== null && networkAllData[3][networkActiveOutputIdx]) {
-      parts.push({ text: networkAllData[3][networkActiveOutputIdx].text, color: '#004284' });
+      outputText = networkAllData[3][networkActiveOutputIdx].text;
     }
 
-    if (parts.length === 0) {
-      pathEl.innerHTML = '<span style="color:white;font-size:0.8125rem;">Click an input node to start</span>';
-      return;
-    }
-
-    pathEl.innerHTML = '';
-    var header = document.createElement('span');
-    header.style.cssText = 'font-size:1rem;color:white;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;';
-    header.textContent = 'Path:';
-    pathEl.appendChild(header);
-
-    parts.forEach(function (part, idx) {
-      var node = document.createElement('span');
-      node.style.cssText = 'padding:0.25rem 0.625rem;background:' + part.color + ';color:#F2F2F2;border-radius:50px;font-size:0.8125rem;font-weight:600;';
-      node.textContent = part.text;
-      pathEl.appendChild(node);
-      if (idx < parts.length - 1) {
-        var arrow = document.createElement('span');
-        arrow.style.cssText = 'color:var(--color-text-secondary);font-size:0.875rem;';
-        arrow.textContent = '\u2192';
-        pathEl.appendChild(arrow);
-      }
-    });
+    pathEl.innerHTML = buildPathPlaceholders(inputText, contextText, intentText, outputText);
   }
 
   // ─── Answer Screen ──────────────────────────────────────────────────

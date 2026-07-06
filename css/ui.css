@@ -31,7 +31,7 @@ This file ensures all user interactions are visually clear and consistent.
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   padding: 1rem 2.5rem;
   background-color: var(--color-accent-red);
   color: var(--color-text-primary);
@@ -65,37 +65,80 @@ This file ensures all user interactions are visually clear and consistent.
 .choice-card {
   display: block;
   width: 100%;
-  padding: 2rem;
   text-align: left;
-  background-color: rgba(0, 66, 132, 0.5);
-  border: 1px solid rgba(0, 66, 132, 0.7);
-  border-radius: 7.5px;
+  background: rgba(0, 8, 20, 0.82);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-  font-family: inherit;
-  font-size: inherit;
-  text-align: center;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.2s cubic-bezier(0.4,0,0.2,1),
+              border-color 0.2s ease,
+              background 0.2s ease;
+  font-family: 'IBM Plex Mono', monospace;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  position: relative;
 }
 
 .choice-card:hover {
-  border-color: var(--color-text-secondary);
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(0, 15, 40, 0.92);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 8px 32px rgba(0,0,0,0.55);
+}
+
+.choice-card::after {
+  content: '[ select ]';
+  position: absolute;
+  bottom: 1.1rem;
+  right: 1.25rem;
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0);
+  transition: color 0.2s ease;
+  pointer-events: none;
+}
+
+.choice-card:hover::after {
+  color: rgba(255,255,255,0.25);
+}
+
+.card-terminal-header {
+  padding: 0.6rem 1.25rem;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+
+.card-terminal-body {
+  padding: 1.5rem 1.5rem 1.75rem;
+}
+
+.card-term-prompt {
+  color: rgba(255,255,255,0.3);
+  margin-right: 0.4rem;
 }
 
 .choice-card-label {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  margin-bottom: 0.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 0.75rem;
+  color: white;
 }
 
 .choice-card-desc {
-  font-size: 24px;
-  font-weight: 300;
-  font-style: italic;
-  font-family: 'Inter', sans-serif;
-  color: white;
+  font-size: 16px;
+  font-weight: 400;
+  font-style: normal;
+  font-family: 'IBM Plex Mono', monospace;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.6;
 }
 
 input.choice-radio {
@@ -103,36 +146,44 @@ input.choice-radio {
 }
 
 #mode-own:checked ~ .screens .card-own,
-#mode-internet:checked ~ .screens .card-internet {
-  background-color: #004284;
-  border-color: #004284;
+#mode-internet:checked ~ .screens .card-internet,
+#type-accurate:checked ~ .screens .card-accurate,
+#type-fast:checked ~ .screens .card-fast {
+  background: rgba(0, 40, 100, 0.55);
+  border-color: rgba(100, 160, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(100,160,255,0.3), 0 4px 24px rgba(0,40,100,0.4);
+}
+
+#mode-own:checked ~ .screens .card-own .card-term-prompt,
+#mode-internet:checked ~ .screens .card-internet .card-term-prompt,
+#type-accurate:checked ~ .screens .card-accurate .card-term-prompt,
+#type-fast:checked ~ .screens .card-fast .card-term-prompt {
+  color: rgba(100,160,255,0.8);
 }
 
 #mode-own:checked ~ .screens .card-own .choice-card-desc,
-#mode-internet:checked ~ .screens .card-internet .choice-card-desc {
-  color: rgba(242,242,242,0.8);
-}
-
-#type-accurate:checked ~ .screens .card-accurate,
-#type-fast:checked ~ .screens .card-fast {
-  background-color: #004284;
-  border-color: #004284;
-}
-
+#mode-internet:checked ~ .screens .card-internet .choice-card-desc,
 #type-accurate:checked ~ .screens .card-accurate .choice-card-desc,
 #type-fast:checked ~ .screens .card-fast .choice-card-desc {
-  color: rgba(242,242,242,0.8);
+  color: rgba(255,255,255,0.6);
 }
 
 .keyword-area {
   padding: 0;
-  margin-bottom: 2rem;
+  width: 100%;
 }
 
 .keyword-tags {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  width: 100%;
+  counter-reset: kw;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.keyword-tags label {
+  display: block;
+  counter-increment: kw;
 }
 
 .keyword-toggle {
@@ -140,37 +191,81 @@ input.choice-radio {
 }
 
 .keyword-tag {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  padding: 0.75rem 1.25rem;
-  font-size: 32px;
-  font-weight: 700;
-  background-color: rgba(50, 180, 200, 0.5);
-  color: var(--color-text-primary);
-  border: 1px solid rgba(50, 180, 200, 0.5);
-  border-radius: 7.5px;
+  gap: 2rem;
+  width: 100%;
+  padding: 1.1rem 1.25rem;
+  font-size: 26px;
+  font-weight: 500;
+  font-family: 'IBM Plex Mono', monospace;
+  color: rgba(255,255,255,0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-left: 3px solid transparent;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-  font-family: inherit;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   user-select: none;
-  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+
+.keyword-tag::before {
+  content: counter(kw, decimal-leading-zero);
+  font-size: 38px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  line-height: 1;
+  width: 2.5rem;
+  transition: color 0.18s ease;
+}
+
+.keyword-tag::after {
+  content: '[ ]';
+  margin-left: auto;
+  font-size: 15px;
+  color: rgba(255,255,255,0.18);
+  flex-shrink: 0;
+  transition: color 0.18s ease;
 }
 
 .keyword-tag:hover {
-  background-color: rgba(50, 180, 200, 0.7);
-  border-color: rgba(50, 180, 200, 0.7);
+  color: rgba(255,255,255,0.85);
+}
+
+.keyword-tag:hover::before {
+  color: rgba(255,255,255,0.15);
+}
+
+.keyword-tag:hover::after {
+  color: rgba(255,255,255,0.4);
 }
 
 .keyword-toggle:checked + .keyword-tag {
-  background-color: #32B4C8;
-  border-color: #32B4C8;
   color: white;
+  border-left-color: rgba(100, 160, 255, 0.7);
+  background: rgba(0, 40, 100, 0.15);
+}
+
+.keyword-toggle:checked + .keyword-tag::before {
+  color: rgba(100, 160, 255, 0.25);
+}
+
+.keyword-toggle:checked + .keyword-tag::after {
+  content: '[x]';
+  color: rgba(100, 160, 255, 0.9);
+}
+
+.keyword-counter-wrap {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1.25rem;
+  width: 100%;
 }
 
 .keyword-counter {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
+  font-size: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.04em;
 }
 
 .text-input {
@@ -180,7 +275,7 @@ input.choice-radio {
   color: var(--color-text-primary);
   border: 1px solid transparent;
   transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1);
-  font-size: 1rem;
+  font-size: var(--font-s);
   font-family: inherit;
   outline: none;
 }
@@ -223,26 +318,37 @@ input.choice-radio {
 }
 
 .processing-text {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .section-label {
-  font-size: 48px;
+  font-size: 13px;
   font-weight: 700;
-  color: white;
+  font-family: 'Oxanium', sans-serif;
+  color: rgba(255,255,255,0.45);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  text-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  letter-spacing: 0.15em;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-num {
+  font-size: var(--font-l);
+  font-weight: 900;
+  font-family: 'Hanken Grotesk', sans-serif;
+  color: rgba(255,255,255,0.12);
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   background-color: var(--color-dark-panel);
   color: var(--color-text-secondary);
 }
@@ -275,7 +381,7 @@ input.choice-radio {
 }
 
 .answer-label {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-accent-red);
   text-transform: uppercase;
@@ -283,7 +389,7 @@ input.choice-radio {
 }
 
 .answer-text {
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   color: var(--color-text-primary);
   line-height: 1.75;
   white-space: pre-line;
@@ -312,12 +418,56 @@ input.choice-radio {
   transition: stroke 0.5s ease, stroke-width 0.5s ease;
 }
 
+.node-reticle {
+  opacity: 0.22;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.node-reticle path {
+  fill: none;
+  stroke: rgba(255,255,255,0.55);
+  stroke-width: 2;
+  stroke-linecap: square;
+  transition: stroke 0.3s ease;
+}
+
+g.node-selected .node-reticle {
+  opacity: 1;
+  transform: scale(0.88);
+}
+
+g.node-selected .node-reticle path {
+  stroke: rgba(100,160,255,1);
+}
+
+.node-pulse {
+  fill: none;
+  stroke: rgba(100,160,255,0.85);
+  stroke-width: 2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+g.node-selected .node-pulse {
+  animation: node-pulse-ping 1.8s ease-out infinite;
+}
+
+@keyframes node-pulse-ping {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
 .processing-status {
   width: 100%;
   background-color: var(--color-dark-panel);
   color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   padding: 1rem 2rem;
   text-align: center;
 }
@@ -328,20 +478,20 @@ input.choice-radio {
 }
 
 .feature-card-title {
-  font-size: 1.125rem;
+  font-size: var(--font-s);
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 0.75rem;
 }
 
 .feature-card-desc {
-  font-size: 0.875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
   line-height: 1.6;
 }
 
 .progress-value {
-  font-size: 1.875rem;
+  font-size: var(--font-m);
   font-weight: 700;
   color: var(--color-text-primary);
 }

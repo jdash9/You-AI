@@ -176,7 +176,8 @@ It contains:
         var outputData = { text: '' };
         var steps = GameLogic.getNetworkSteps();
         if (steps.length > 0) {
-          outputData.text = steps[0].output || steps[0].word || 'Selected answer';
+          outputData = steps[0];
+          outputData.text = outputData.text || outputData.output || outputData.word || 'Selected answer';
         }
         // Correct = user selected the top output (index 0) AND picked a strong keyword
         // AND chose the correct filter for the current question (or no filter was needed)
@@ -198,7 +199,9 @@ It contains:
           filterIsCorrect = selectedFilt === recommendedFilt;
         }
         var isCorrectAnswer = pickedTopOutput && hasStrongKeyword && filterIsCorrect;
-        GameLogic.showResultScreen(outputIdx, outputData, isCorrectAnswer);
+        var resultMode = AISimulation.getMode ? AISimulation.getMode() : null;
+        var resultType = AISimulation.getType ? AISimulation.getType() : null;
+        GameLogic.showResultScreen(outputIdx, outputData, isCorrectAnswer, resultMode, resultType);
       });
     }
 
