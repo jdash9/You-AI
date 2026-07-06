@@ -1050,6 +1050,12 @@ const GameLogic = (function () {
       }
     }
 
+    // Hide "Back to Neural Network" button when timed out
+    var backToNeuralBtn = document.querySelector('.result-back-btn');
+    if (backToNeuralBtn) {
+      backToNeuralBtn.style.display = isTimedOut ? 'none' : '';
+    }
+
     goToScreen('s-result');
 
     // ── Stat line ──────────────────────────────────────────────────────────
