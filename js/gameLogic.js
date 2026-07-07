@@ -36,9 +36,11 @@ const GameLogic = (function () {
   let filterExplanation = null; // generated humorous explanation string
   let filterChosen = false; // whether the user clicked a filter option (including nofilter)
   const FAST_TIMER_SECONDS = 60;
+  const FAST_TIMER_BAR_CHARS = 20;
   let fastTimerInterval = null;
   let fastTimerDeadline = 0;
   let fastTimerActive = false;
+  let fastTimerChompOpen = true;
 
   function svgEl(name, attrs) {
     const el = document.createElementNS(SVGNS, name);
@@ -158,30 +160,45 @@ const GameLogic = (function () {
   function updateFastTimerDisplay(msRemaining) {
     var timerEl = document.getElementById('fast-timer');
     var textEl = document.getElementById('fast-timer-text');
-    var fillEl = document.getElementById('fast-timer-fill');
+    var eatenEl = document.getElementById('fast-timer-eaten');
+    var pacEl = document.getElementById('fast-timer-pac');
+    var dashesEl = document.getElementById('fast-timer-dashes');
     var remainingSeconds = Math.max(0, Math.ceil(msRemaining / 1000));
-    var progress = Math.max(0, Math.min(1, msRemaining / (FAST_TIMER_SECONDS * 1000)));
+    var elapsedFraction = 1 - Math.max(0, Math.min(1, msRemaining / (FAST_TIMER_SECONDS * 1000)));
+    var pacIndex = Math.min(FAST_TIMER_BAR_CHARS - 1, Math.floor(elapsedFraction * FAST_TIMER_BAR_CHARS));
 
     if (timerEl) {
-      timerEl.style.display = 'flex';
+      timerEl.style.display = 'block';
       if (remainingSeconds <= 10) timerEl.classList.add('fast-timer-low');
       else timerEl.classList.remove('fast-timer-low');
     }
     if (textEl) textEl.textContent = remainingSeconds + 's';
-    if (fillEl) fillEl.style.width = (progress * 100) + '%';
+    if (eatenEl) eatenEl.textContent = repeatChar(' ', pacIndex);
+    if (pacEl) pacEl.textContent = fastTimerChompOpen ? 'C' : 'c';
+    if (dashesEl) dashesEl.textContent = repeatChar('-', FAST_TIMER_BAR_CHARS - pacIndex - 1);
+  }
+
+  function repeatChar(ch, count) {
+    var out = '';
+    for (var i = 0; i < count; i++) out += ch;
+    return out;
   }
 
   function resetFastTimerDisplay() {
     var timerEl = document.getElementById('fast-timer');
     var textEl = document.getElementById('fast-timer-text');
-    var fillEl = document.getElementById('fast-timer-fill');
+    var eatenEl = document.getElementById('fast-timer-eaten');
+    var pacEl = document.getElementById('fast-timer-pac');
+    var dashesEl = document.getElementById('fast-timer-dashes');
 
     if (timerEl) {
       timerEl.style.display = 'none';
       timerEl.classList.remove('fast-timer-low');
     }
     if (textEl) textEl.textContent = FAST_TIMER_SECONDS + 's';
-    if (fillEl) fillEl.style.width = '100%';
+    if (eatenEl) eatenEl.textContent = '';
+    if (pacEl) pacEl.textContent = 'C';
+    if (dashesEl) dashesEl.textContent = repeatChar('-', FAST_TIMER_BAR_CHARS - 1);
   }
 
   function stopFastTimer() {
@@ -198,6 +215,7 @@ const GameLogic = (function () {
     if (!fastTimerActive) return;
 
     var msRemaining = fastTimerDeadline - Date.now();
+    fastTimerChompOpen = !fastTimerChompOpen;
     updateFastTimerDisplay(msRemaining);
 
     if (msRemaining <= 0) {
@@ -209,6 +227,7 @@ const GameLogic = (function () {
   function startFastTimer() {
     stopFastTimer();
     fastTimerActive = true;
+    fastTimerChompOpen = true;
     fastTimerDeadline = Date.now() + FAST_TIMER_SECONDS * 1000;
     updateFastTimerDisplay(FAST_TIMER_SECONDS * 1000);
     fastTimerInterval = setInterval(handleFastTimerTick, 250);
