@@ -327,7 +327,7 @@ input.screen-nav {
 /* ── Keywords Screen ─────────────────────────────────────────────────────────*/
 .keywords-intro {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 20px;
+  font-size: var(--font-m);
   color: rgba(255,255,255,0.75);
   margin-bottom: 1.5rem;
   width: 100%;
@@ -392,7 +392,7 @@ input.screen-nav {
 
 .prompt-intro {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 20px;
+  font-size: var(--font-m);
   color: rgba(255,255,255,0.75);
   margin-bottom: 1.5rem;
 }
@@ -411,7 +411,7 @@ input.screen-nav {
 
 .mode-intro {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 32px;
+  font-size: var(--font-m);
   color: rgba(255,255,255,0.85);
   margin-bottom: 2.5rem;
   width: 100%;
@@ -427,7 +427,7 @@ input.screen-nav {
 }
 
 .mode-col {
-  flex: 0 0 480px;
+  flex: 0 0 984px;
   display: flex;
   flex-direction: column;
 }
@@ -457,7 +457,7 @@ input.screen-nav {
 .mode-col-body {
   padding: 1.25rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   flex: 1;
 }
@@ -624,7 +624,7 @@ label.terminal-continue-btn.btn-disabled {
 
 .filter-intro {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 32px;
+  font-size: var(--font-m);
   color: rgba(255,255,255,0.85);
   margin-bottom: 2.5rem;
   width: 100%;
@@ -705,7 +705,7 @@ button.filter-btn {
 
 .result-intro {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 24px;
+  font-size: var(--font-m);
   color: rgba(255,255,255,0.85);
   margin-bottom: 2rem;
   width: 100%;

@@ -462,13 +462,13 @@ const GameLogic = (function () {
     container.style.cssText = 'display:flex;flex-direction:row;align-items:flex-start;gap:3rem;width:100%;';
 
     var leftCol = document.createElement('div');
-    leftCol.style.cssText = 'flex-shrink:0;width:280px;display:flex;flex-direction:column;justify-content:center;';
+    leftCol.style.cssText = 'flex-shrink:0;width:340px;display:flex;flex-direction:column;justify-content:center;';
     var termHeader = document.createElement('div');
     termHeader.style.cssText = 'font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding-bottom:0.75rem;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:1rem;';
     termHeader.textContent = 'network.info';
     var desc = document.createElement('p');
-    desc.style.cssText = 'font-size:16px;font-weight:500;font-family:"IBM Plex Mono",monospace;color:rgba(255,255,255,0.65);line-height:1.7;margin:0;';
-    desc.innerHTML = '&gt; Select one node per layer to build a path from input to output.';
+    desc.style.cssText = 'font-size:20px;font-weight:500;font-family:"IBM Plex Mono",monospace;color:rgba(255,255,255,0.75);line-height:1.6;margin:0;';
+    desc.innerHTML = '&gt; Click one of your keywords, then pick one node per layer <br>Context, Intent, Output <br>to trace the path you think the AI will take from your prompt to its answer.';
     leftCol.appendChild(termHeader);
     leftCol.appendChild(desc);
     container.appendChild(leftCol);
